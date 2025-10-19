@@ -17,10 +17,10 @@ export default defineNuxtConfig({
 
   logLevel: "silent",
   devtools: {
-    enabled: true,
+    enabled: false,
 
     timeline: {
-      enabled: true,
+      enabled: false,
     },
   },
 
@@ -44,7 +44,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      apiBase: "http://localhost:8000/", // ajuste conforme seu backend
+      apiBase: process.env.NUXT_API_BASE_URL || "http://localhost:8000/",
     },
   },
 });
