@@ -63,6 +63,8 @@ app.include_router(pacientes_router, prefix="/pacientes", tags=["Pacientes"])
 app.include_router(categoria_router, prefix="/categorias", tags=["Categorias"])
 app.include_router(entidades_router, prefix="/entidades", tags=["Entidades"])
 app.include_router(artigos_router, prefix="/artigos", tags=["ArtigosMedicos"])
+# Fix trailing slash redirect issue by adding redirect_slashes=False (if supported)
+# Or we need to modify individual routers to handle both with and without trailing slash
 app.include_router(precos_router, prefix="/precos", tags=["Precos"])
 app.include_router(dentes_router, prefix="/dentes", tags=["Dentes"])
 app.include_router(orcamento_router, prefix="/orcamentos", tags=["Orcamentos"])

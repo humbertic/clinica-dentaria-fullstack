@@ -30,7 +30,14 @@ def criar_artigo(
     return service.criar_artigo(db, dados, criado_por_id=usuario.id)
 
 @router.get("/", response_model=list[schemas.ArtigoResponse], summary="Listar artigos")
-def listar_artigos(
+def listar_artigos_with_slash(
+    db: Session = Depends(get_db),
+    usuario: Utilizador = Depends(get_current_user)
+):
+    return service.listar_artigos(db)
+
+@router.get("", response_model=list[schemas.ArtigoResponse], summary="Listar artigos (sem slash)")
+def listar_artigos_without_slash(
     db: Session = Depends(get_db),
     usuario: Utilizador = Depends(get_current_user)
 ):
