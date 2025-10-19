@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  database:
+    image: postgres:15
+    container_name: clinica_db
+    environment:
+      POSTGRES_DB: clinica_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+    ports:
+      - "54321:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database_backup.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # Backend (FastAPI)
+  backend:
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    container_name: clinica_backend
+    environment:
+      DATABASE_URL: postgresql://admin:admin123@database:5432/clinica_db
+      SECRET_KEY: supersegredo
+      ACCESS_TOKEN_EXPIRE_MINUTES: 60
+    ports:
+      - "8000:8000"
+    depends_on:
+      - database
+
+  # Frontend (Nuxt 3)
+  frontend:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    container_name: clinica_frontend
+    environment:
+      NUXT_API_BASE_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
