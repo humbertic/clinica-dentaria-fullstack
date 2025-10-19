@@ -1,0 +1,24 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "services": [
+    {
+      "name": "backend",
+      "source": {
+        "dockerfile": "Dockerfile.backend"
+      },
+      "healthcheckPath": "/docs",
+      "variables": {
+        "PORT": "8000"
+      }
+    },
+    {
+      "name": "frontend",
+      "source": {
+        "dockerfile": "Dockerfile.frontend"
+      },
+      "variables": {
+        "PORT": "3000"
+      }
+    }
+  ]
+}
