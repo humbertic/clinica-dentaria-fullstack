@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Light Theme (Default) */
+@layer base {
+  :root,
+  .theme-light {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+  
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+  
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+  
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+  
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+  
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+  
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+  
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+  
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    --radius: 0.5rem;
+  }
+  :root {
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+  .dark {
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+/* Dark Theme */
+@layer base {
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+  
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+  
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+  
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+  
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+  
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+  
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+  
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+  
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    --radius: 0.5rem;
+  }
+}
+
+
+/* Optional base styles for consistency */
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* keep your left-border stripes */
+  .vuecal__event { @apply border-l-4; }
+
+  /* stripe colours */
+  .entidade-inpsa { @apply border-l-blue-500; }
+  .entidade-part  { @apply border-l-green-500; }
+  .entidade-ett   { @apply border-l-red-500; }
+
+  /* now drive Vue Cal’s own bg/text via its CSS vars */
+  .vuecal__event.entidade-inpsa {
+    --vuecal-event-color: theme('colors.blue.100');
+    --vuecal-contrast-color: theme('colors.blue.900');
+  }
+  .vuecal__event.entidade-part {
+    --vuecal-event-color: theme('colors.green.100');
+    --vuecal-contrast-color: theme('colors.green.900');
+  }
+  .vuecal__event.entidade-ett {
+    --vuecal-event-color: theme('colors.red.100');
+    --vuecal-contrast-color: theme('colors.red.900');
+  }
+}
