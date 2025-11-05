@@ -130,12 +130,13 @@ def listar_clinicas(db: Session, utilizador_atual: Utilizador):
     if is_master_admin(utilizador_atual):
         return query.filter(
             models.Clinica.criado_por_id == utilizador_atual.id
-        ).all()
+        ).order_by(models.Clinica.id).all()
     else:
         return (
             query.join(UtilizadorClinica,
                        UtilizadorClinica.clinica_id == models.Clinica.id)
                  .filter(UtilizadorClinica.utilizador_id == utilizador_atual.id)
+                 .order_by(models.Clinica.id)
                  .all()
         )
         

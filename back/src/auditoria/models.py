@@ -7,6 +7,7 @@ class Auditoria(Base):
     __tablename__ = "Auditoria"
     id = Column(Integer, primary_key=True)
     utilizador_id = Column(Integer, ForeignKey("Utilizador.id"))
+    clinica_id = Column(Integer, ForeignKey("Clinica.id"), nullable=False)
     acao = Column(String(100), nullable=False)  # Ex: "Atualização", "Criação", "Login"
     objeto = Column(String(100), nullable=False)  # Ex: "Utilizador", "Perfil", "Sessao"
     objeto_id = Column(Integer, nullable=True)    # ID do objeto afetado
@@ -14,3 +15,4 @@ class Auditoria(Base):
     data = Column(DateTime, default=datetime.utcnow)
 
     utilizador = relationship("Utilizador")
+    clinica = relationship("Clinica")

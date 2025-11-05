@@ -35,33 +35,89 @@ def registrar(dados: schemas.UtilizadorCreate, db: Session = Depends(get_db)):
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     # Authenticate the user
     utilizador = service.autenticar_utilizador(
-        db, 
-        email_or_username=form_data.username, 
+        db,
+        email_or_username=form_data.username,
         password=form_data.password
     )
+
+    # Get user's clinics
+    user_with_clinicas = service.obter_utilizador(db, utilizador.id)
+
+    # Only set default clinic if user has exactly ONE clinic
+    default_clinic_id = None
+    user_clinics = user_with_clinicas.get("clinicas", [])
     
+    if len(user_clinics) == 1:
+        # Single clinic - auto-select it
+        default_clinic_id = user_clinics[0]["clinica"]["id"]
+    # If multiple clinics, leave default_clinic_id as None so frontend can handle selection
+
     # Get custom token duration based on user's clinics
     token_duration_minutes = get_token_duration_for_user(utilizador.id, db)
-    
-    # Create token with custom duration
+
+    # Create token with custom duration and clinic (if single)
     expires_delta = timedelta(minutes=token_duration_minutes)
     token = create_access_token(
-        {"sub": str(utilizador.id)}, 
-        expires_delta=expires_delta
+        {"sub": str(utilizador.id)},
+        expires_delta=expires_delta,
+        clinica_id=default_clinic_id
     )
-    
-    # Record session in database
+
+    # Record session in database with clinic
     expira_em = datetime.utcnow() + expires_delta
-    service.criar_sessao(db, utilizador.id, token, expira_em)
-    
+    service.criar_sessao(db, utilizador.id, token, expira_em, default_clinic_id)
+
     # Log the token duration for debugging
-    print(f"Token created for user {utilizador.id} with duration of {token_duration_minutes} minutes")
-    
-    # Return the token response
+    print(f"Token created for user {utilizador.id} with duration of {token_duration_minutes} minutes, clinic: {default_clinic_id}")
+
+    # Return the token response with user info
     return {
-        "access_token": token, 
+        "access_token": token,
         "token_type": "bearer",
-        "expires_in": token_duration_minutes * 60  # Optional: Add seconds until expiration
+        "expires_in": token_duration_minutes * 60,
+        "user": user_with_clinicas,
+        "active_clinic_id": default_clinic_id  # Will be None if multiple clinics
+    }
+
+# Select active clinic
+@router.post("/select-clinic", response_model=schemas.ClinicSelectionResponse)
+def select_clinic(
+    request: schemas.ClinicSelectionRequest,
+    current_user: models.Utilizador = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Allow user to select their active clinic for the session.
+    Updates the session record and returns a new token with the selected clinic.
+    """
+    # Verify user has access to this clinic
+    user_clinic = db.query(models.UtilizadorClinica).filter_by(
+        utilizador_id=current_user.id,
+        clinica_id=request.clinica_id,
+        ativo=True
+    ).first()
+
+    if not user_clinic:
+        raise HTTPException(
+            status_code=403,
+            detail="Utilizador não tem acesso a esta clínica."
+        )
+
+    # Update all active sessions for this user to use the new clinic
+    active_sessions = db.query(models.Sessao).filter_by(
+        utilizador_id=current_user.id,
+        ativo=True
+    ).all()
+
+    for session in active_sessions:
+        session.clinica_id = request.clinica_id
+
+    db.commit()
+
+    return {
+        "success": True,
+        "message": "Clínica ativa atualizada com sucesso.",
+        "active_clinic_id": request.clinica_id
     }
 
 @router.post("/refresh-token", response_model=schemas.TokenResponse)
@@ -84,10 +140,10 @@ def refresh_token(
     
     result = refresh_access_token(current_user.id, db)
     new_token = result["access_token"]
-    
+
     token_duration_minutes = get_token_duration_for_user(current_user.id, db)
     nova_data_expiracao = datetime.utcnow() + timedelta(minutes=token_duration_minutes)
-    
+
     if session:
         session.token = new_token
         session.data_expiracao = nova_data_expiracao
@@ -99,7 +155,7 @@ def refresh_token(
         ).first()
         if user_clinica:
             clinica_id = user_clinica.clinica_id
-            
+
         new_session = models.Sessao(
             utilizador_id=current_user.id,
             clinica_id=clinica_id,
@@ -109,9 +165,16 @@ def refresh_token(
         )
         db.add(new_session)
         db.commit()
-    
-    
-    return result
+
+    # Get user with clinics to include in response
+    user_with_clinicas = service.obter_utilizador(db, current_user.id)
+
+    # Add user data to the result to match TokenResponse schema
+    return {
+        **result,
+        "user": user_with_clinicas,
+        "active_clinic_id": session.clinica_id if session else None
+    }
 
 
 def get_token_from_request(request: Request):

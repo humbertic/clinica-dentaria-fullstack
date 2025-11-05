@@ -3,6 +3,8 @@ import { AlertCircle } from "lucide-vue-next";
 type LoginResponse = {
   access_token: string;
   expires_in: number;
+  user: any;
+  active_clinic_id: number | null;
 };
 type UserResponse = { perfil: { perfil: string } | null };
 
@@ -41,6 +43,12 @@ const onSubmit = async (e: Event) => {
 
     const token = data.value?.access_token;
     const expiresIn = data.value?.expires_in || 3600;
+    const user = data.value?.user;
+    const activeClinicId = data.value?.active_clinic_id;
+
+    // Store token
+    const tokenCookie = useCookie("token");
+    tokenCookie.value = token;
 
     const expiresInCookie = useCookie("expiresIn");
     expiresInCookie.value = expiresIn.toString();
@@ -54,19 +62,23 @@ const onSubmit = async (e: Event) => {
     console.log(
       `Token will expire at: ${new Date(expiresAt).toLocaleTimeString()}`
     );
-    if (token) {
-      const tokenCookie = useCookie("token");
-      tokenCookie.value = token;
-      const { data: user } = await useFetch<UserResponse>(
-        `${baseUrl}utilizadores/me`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      userState.value = user.value;
 
-      if (token) {
-        useCookie("token").value = token;
+    if (token && user) {
+      // Store user data
+      userState.value = user;
+
+      // Store active clinic ID
+      if (activeClinicId) {
+        const activeClinicCookie = useCookie("activeClinicId");
+        activeClinicCookie.value = activeClinicId.toString();
+      }
+
+      // Check if user has multiple clinics and no active clinic
+      if (user.clinicas && user.clinicas.length > 1 && !activeClinicId) {
+        // Redirect to clinic selection page
+        return navigateTo("/select-clinic");
+      } else {
+        // Normal login flow
         return navigateTo("/?refresh=true");
       }
     } else {

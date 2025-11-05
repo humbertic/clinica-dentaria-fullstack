@@ -47,12 +47,12 @@ def criar_utilizador(
         db.add(utilizador_clinica)
         db.commit()
         registrar_auditoria(
-        db,
-        novo_utilizador.id,  # ou admin_id se for admin criando
-        "Criação",
-        "Utilizador",
-        novo_utilizador.id,
-        f"Utilizador {novo_utilizador.username} criado."
+            db,
+            novo_utilizador.id,
+            "Criação",
+            "Utilizador",
+            novo_utilizador.id,
+            f"Utilizador {novo_utilizador.username} criado."
         )
 
     return novo_utilizador
@@ -322,9 +322,10 @@ def remover_perfil(db: Session, user_id: int, perfil_id: int, admin_id: int):
     )
     return {"detail": "Perfil removido com sucesso."}
 
-def criar_sessao(db: Session, utilizador_id: int, token: str, expira_em: datetime):
+def criar_sessao(db: Session, utilizador_id: int, token: str, expira_em: datetime, clinica_id: int = None):
     sessao = models.Sessao(
         utilizador_id=utilizador_id,
+        clinica_id=clinica_id,
         token=token,
         data_expiracao=expira_em,
         ativo=True
@@ -332,14 +333,15 @@ def criar_sessao(db: Session, utilizador_id: int, token: str, expira_em: datetim
     db.add(sessao)
     db.commit()
     db.refresh(sessao)
-    registrar_auditoria(
-        db,
-        utilizador_id,
-        "Login",
-        "Sessao",
-        sessao.id,
-        "Login efetuado com sucesso."
-    )
+    # registrar_auditoria(
+    #     db,
+    #     utilizador_id,
+    #     "Login",
+    #     "Sessao",
+    #     sessao.id,
+    #     "Login efetuado com sucesso.",
+    #     clinica_id=clinica_id
+    # )
     return sessao
 
 def logout(db: Session, utilizador_id: int, token: str):

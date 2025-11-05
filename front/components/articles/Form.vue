@@ -120,7 +120,7 @@ async function onSubmit(e: Event) {
         body: JSON.stringify(form.value),
       });
     } else {
-      res = await fetch(`${baseUrl}artigos`, {
+      res = await fetch(`${baseUrl}artigos/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

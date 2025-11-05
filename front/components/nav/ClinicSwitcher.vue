@@ -6,7 +6,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { ChevronsUpDown, Users, Plus } from "lucide-vue-next";
-import { ref, watch } from "vue";
+import { ref, watch, onMounted } from "vue";
 
 const props = defineProps<{
   clinics: {
@@ -17,14 +17,21 @@ const props = defineProps<{
   }[];
 }>();
 
-const selectedClinic = useState(
+type Clinic = {
+  id: number;
+  nome: string;
+  morada?: string;
+  email_envio?: string;
+};
+
+const selectedClinic = useState<Clinic | null>(
   "selectedClinic",
-  () => props.clinics[0] || null
+  () => null
 );
 
 const showAddClinicModal = ref(false);
 const { isMobile } = useSidebar();
-const activeClinic = ref(props.clinics[0]);
+const activeClinic = ref<Clinic | null>(null);
 
 function handleClinicSaved() {
   showAddClinicModal.value = false;
@@ -42,19 +49,51 @@ function setActiveClinic(clinic: {
 }) {
   selectedClinic.value = clinic;
   activeClinic.value = clinic;
+  
+  // Save to cookie/localStorage for persistence
+  const activeClinicCookie = useCookie("activeClinicId");
+  activeClinicCookie.value = clinic.id.toString();
 }
 
-// Atualiza o activeClinic se a lista mudar
+// Initialize active clinic from cookie or default to first
+function initializeActiveClinic(clinics: typeof props.clinics) {
+  if (!clinics || clinics.length === 0) return;
+  
+  // Try to get from cookie first
+  const activeClinicCookie = useCookie("activeClinicId");
+  const storedClinicId = activeClinicCookie.value;
+  
+  let clinicToSet = null;
+  
+  if (storedClinicId) {
+    // Find the stored clinic in the list
+    clinicToSet = clinics.find((c) => c.id === Number(storedClinicId));
+  }
+  
+  // If not found or no stored clinic, use first one
+  if (!clinicToSet) {
+    clinicToSet = clinics[0];
+    // Save it to cookie
+    activeClinicCookie.value = clinicToSet.id.toString();
+  }
+  
+  selectedClinic.value = clinicToSet;
+  activeClinic.value = clinicToSet;
+}
+
+// Watch for clinic list changes
 watch(
   () => props.clinics,
   (val) => {
-    if (val && val.length > 0) {
-      selectedClinic.value = val[0];
-      activeClinic.value = val[0];
-    }
+    initializeActiveClinic(val);
   },
   { immediate: true }
 );
+
+// Also initialize on mount (in case clinics are already available)
+onMounted(() => {
+  initializeActiveClinic(props.clinics);
+});
 </script>
 
 <template>

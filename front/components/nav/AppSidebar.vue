@@ -176,7 +176,7 @@ const router = useRouter();
 async function handleLogout() {
   const token = useCookie("token");
   try {
-    await $fetch(`${baseUrl}logout`, {
+    await $fetch(`${baseUrl}utilizadores/logout`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token.value}` },
     });

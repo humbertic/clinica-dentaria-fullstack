@@ -3,13 +3,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from src.core.config import settings
 
-# Priority: 1) DATABASE_URL env var (Railway/Docker), 2) Settings from .env file
-DATABASE_URL = os.getenv("DATABASE_URL") or (
-    f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}"
-    f"@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
-)
+# Use the database_url property from settings which handles both individual params and DATABASE_URL
+DATABASE_URL = settings.database_url
 
-print(f"🔗 Using database: {DATABASE_URL}")
+# print(f"🔗 Using database: {DATABASE_URL}")
 
 # Criação do engine
 engine = create_engine(DATABASE_URL)

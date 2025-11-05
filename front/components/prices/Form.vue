@@ -78,11 +78,6 @@ async function savePrice() {
   const saving = ref(true);
   const token = useCookie("token").value;
 
-  const payload = {
-    valor_entidade: Number(form.value.valor_entidade),
-    valor_paciente: Number(form.value.valor_paciente),
-  };
-
   try {
     let url;
     let method;
@@ -91,6 +86,10 @@ async function savePrice() {
     if (props.isEditing) {
       url = `${baseUrl}precos/${form.value.artigo.id}/${form.value.entidade_id}`;
       method = "PUT";
+      payload = {
+        valor_entidade: Number(form.value.valor_entidade),
+        valor_paciente: Number(form.value.valor_paciente),
+      };
     } else {
       url = `${baseUrl}precos`;
       method = "POST";
