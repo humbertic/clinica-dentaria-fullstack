@@ -80,6 +80,31 @@ function openEditDialog(artigo: Artigo) {
   editingArtigo.value = artigo;
   showEditDialog.value = true;
 }
+ function handleDelete(artigo: Artigo) {
+  const token = useCookie("token").value;
+  fetch(`${baseUrl}artigos/${artigo.id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("Erro ao deletar artigo");
+      toast({
+        title: "Sucesso",
+        description: "Artigo deletado com sucesso.",
+      });
+      fetchArtigos();
+    })
+    .catch((e) => {
+      toast({
+        title: "Erro ao deletar artigo",
+        description: e instanceof Error ? e.message : String(e),
+        variant: "destructive",
+      });
+    });
+
+ }
 
 function handleSave() {
   showCreateDialog.value = false;
@@ -133,7 +158,7 @@ onMounted(fetchArtigos);
           </div>
         </CardHeader>
         <CardContent>
-          <ArticlesTable :artigos="paginatedArtigos" @edit="openEditDialog" />
+          <ArticlesTable :artigos="paginatedArtigos" @edit="openEditDialog" @delete="handleDelete"/>
           <div class="flex items-center justify-between mt-4">
             <div class="text-sm text-muted-foreground">
               Mostrando

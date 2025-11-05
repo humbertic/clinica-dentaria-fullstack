@@ -68,8 +68,18 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     expires_in: Optional[int] = None
+    user: dict  # Simplified to accept dict structure
+    active_clinic_id: Optional[int] = None
     
     
 class AlterarSenhaRequest(BaseModel):
     senha_atual: str
     nova_senha: str
+
+class ClinicSelectionRequest(BaseModel):
+    clinica_id: int
+
+class ClinicSelectionResponse(BaseModel):
+    success: bool
+    message: str
+    active_clinic_id: int

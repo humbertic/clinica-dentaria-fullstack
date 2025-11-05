@@ -23,7 +23,8 @@ from fastapi import UploadFile
 def criar_paciente(
     db: Session,
     dados: schemas.PacienteCreate,
-    utilizador_id: int
+    utilizador_id: int,
+    clinica_id: int
 ) -> models.Paciente:
     if dados.telefone and db.query(models.Paciente).filter_by(telefone=dados.telefone).first():
         raise HTTPException(status_code=400, detail="Telefone já registado.")
@@ -259,7 +260,8 @@ def atualizar_paciente(
     db: Session,
     paciente_id: int,
     dados: schemas.PacienteUpdate,
-    utilizador_id: int
+    utilizador_id: int,
+    clinica_id: int
 ) -> models.Paciente:
     paciente = obter_paciente(db, paciente_id)
 
@@ -286,7 +288,8 @@ def atualizar_paciente(
 def criar_ficha_clinica(
     db: Session,
     dados: schemas.FichaClinicaCreate,
-    utilizador_id: int
+    utilizador_id: int,
+    clinica_id: int
 ) -> models.FichaClinica:
     ficha = models.FichaClinica(**dados.dict(), responsavel_criacao_id=utilizador_id)
     db.add(ficha)

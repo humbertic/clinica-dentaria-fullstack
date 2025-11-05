@@ -21,7 +21,6 @@ const config = useRuntimeConfig();
 const baseUrl = config.public.apiBase;
 
 onMounted(async () => {
-  console.log("user", props.user);
   error.value = "";
   try {
     const token = useCookie("token").value;

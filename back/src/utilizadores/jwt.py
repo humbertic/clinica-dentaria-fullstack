@@ -13,7 +13,7 @@ from sqlalchemy.orm import joinedload
 
 
 # Chave secreta (idealmente vem do .env)
-SECRET_KEY = "supersegredo"  # substitui isto por uma variável de ambiente depois!
+SECRET_KEY = "supersegredo"  
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
@@ -88,18 +88,23 @@ def get_token_duration_for_user(user_id: int, db: Session) -> int:
 
 
 
-def create_access_token(data: dict, db: Session = None, user_id: int = None, expires_delta: timedelta = None):
+def create_access_token(data: dict, db: Session = None, user_id: int = None, expires_delta: timedelta = None, clinica_id: int = None):
     """
     Generates a JWT with dynamic expiration based on user's clinic configuration.
-    
+
     Args:
         data: The payload to encode in the token
         db: Database session for looking up clinic configuration
         user_id: ID of the user to check for custom token duration
         expires_delta: Optional override for token expiration
+        clinica_id: Optional clinic ID to include in token
     """
     to_encode = data.copy()
-    
+
+    # Add clinic ID to token if provided
+    if clinica_id:
+        to_encode["clinica_id"] = clinica_id
+
     # If explicit expiration is provided, use it
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -111,7 +116,7 @@ def create_access_token(data: dict, db: Session = None, user_id: int = None, exp
     # Fall back to default expiration
     else:
         expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Auditoria</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #d32f2f;
+        }
+
+        .clinic-info {
+            flex: 1;
+        }
+
+        .clinic-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #d32f2f;
+            margin-bottom: 5px;
+        }
+
+        .clinic-details {
+            font-size: 10px;
+            color: #666;
+        }
+
+        .logo-area {
+            width: 80px;
+            text-align: center;
+        }
+
+        .logo {
+            max-width: 80px;
+            max-height: 60px;
+        }
+
+        .report-title {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .report-title h1 {
+            font-size: 20px;
+            color: #d32f2f;
+            margin: 0;
+            font-weight: bold;
+        }
+
+        .report-info {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 10px;
+        }
+
+        .report-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .filters-section {
+            margin-bottom: 20px;
+        }
+
+        .filters-title {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 8px;
+            color: #d32f2f;
+        }
+
+        .filters-content {
+            background-color: #fafafa;
+            padding: 8px;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+
+        .audit-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9px;
+            margin-top: 10px;
+        }
+
+        .audit-table th {
+            background-color: #d32f2f;
+            color: white;
+            padding: 6px 4px;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #ddd;
+        }
+
+        .audit-table td {
+            padding: 4px;
+            border: 1px solid #ddd;
+            vertical-align: top;
+        }
+
+        .audit-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .action-badge {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 8px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .action-criacao { background-color: #e8f5e8; color: #2e7d32; }
+        .action-atualizacao { background-color: #e3f2fd; color: #1565c0; }
+        .action-remocao { background-color: #ffebee; color: #c62828; }
+        .action-login { background-color: #f3e5f5; color: #7b1fa2; }
+        .action-logout { background-color: #f5f5f5; color: #424242; }
+        .action-bloqueio { background-color: #fff3e0; color: #ef6c00; }
+        .action-desbloqueio { background-color: #e8f5e8; color: #388e3c; }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 9px;
+            color: #666;
+        }
+
+        .page-break {
+            page-break-before: always;
+        }
+
+        @media print {
+            .container {
+                padding: 10px;
+            }
+
+            .audit-table {
+                font-size: 8px;
+            }
+
+            .audit-table th,
+            .audit-table td {
+                padding: 3px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="clinic-info">
+                <div class="clinic-name">{{ clinica.nome }}</div>
+                <div class="clinic-details">
+                    {% if clinica.morada %}{{ clinica.morada }}<br>{% endif %}
+                    {% if clinica.telefone %}Tel: {{ clinica.telefone }}{% endif %}
+                    {% if clinica.email %} | Email: {{ clinica.email }}{% endif %}
+                    {% if clinica.nif %}<br>NIF: {{ clinica.nif }}{% endif %}
+                </div>
+            </div>
+            <div class="logo-area">
+                {% if logo_path %}
+                <img src="{{ logo_path }}" alt="Logo" class="logo">
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Report Title -->
+        <div class="report-title">
+            <h1>Relatório de Auditoria</h1>
+        </div>
+
+        <!-- Report Info -->
+        <div class="report-info">
+            <div class="report-info-grid">
+                <div><strong>Total de Registos:</strong> {{ total_records }}</div>
+                <div><strong>Data de Geração:</strong> {{ data_geracao }}</div>
+            </div>
+        </div>
+
+        <!-- Applied Filters -->
+        {% if filters_applied %}
+        <div class="filters-section">
+            <div class="filters-title">Filtros Aplicados:</div>
+            <div class="filters-content">
+                {% if filters_applied.utilizador_id %}<strong>Utilizador ID:</strong> {{ filters_applied.utilizador_id }}<br>{% endif %}
+                {% if filters_applied.acao %}<strong>Ação:</strong> {{ filters_applied.acao }}<br>{% endif %}
+                {% if filters_applied.objeto %}<strong>Objeto:</strong> {{ filters_applied.objeto }}<br>{% endif %}
+                {% if filters_applied.data_inicio %}<strong>Data Início:</strong> {{ filters_applied.data_inicio }}<br>{% endif %}
+                {% if filters_applied.data_fim %}<strong>Data Fim:</strong> {{ filters_applied.data_fim }}<br>{% endif %}
+                {% if filters_applied.search %}<strong>Pesquisa:</strong> {{ filters_applied.search }}<br>{% endif %}
+                {% if not (filters_applied.utilizador_id or filters_applied.acao or filters_applied.objeto or filters_applied.data_inicio or filters_applied.data_fim or filters_applied.search) %}
+                Nenhum filtro aplicado - todos os registos
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Audit Records Table -->
+        <table class="audit-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">ID</th>
+                    <th style="width: 12%;">Data</th>
+                    <th style="width: 15%;">Utilizador</th>
+                    <th style="width: 10%;">Ação</th>
+                    <th style="width: 12%;">Objeto</th>
+                    <th style="width: 15%;">Objeto Nome</th>
+                    <th style="width: 31%;">Detalhes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr>
+                    <td>{{ record.id }}</td>
+                    <td>{{ record.data }}</td>
+                    <td>{{ record.utilizador_nome }}</td>
+                    <td>
+                        <span class="action-badge action-{{ record.acao.lower().replace('ç', 'c').replace('ã', 'a').replace(' ', '') }}">
+                            {{ record.acao }}
+                        </span>
+                    </td>
+                    <td>{{ record.objeto }}</td>
+                    <td>{{ record.objeto_nome }}</td>
+                    <td>{{ record.detalhes | truncate(100) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if not records %}
+        <div style="text-align: center; margin: 40px 0; color: #666;">
+            <p>Nenhum registo de auditoria encontrado com os filtros aplicados.</p>
+        </div>
+        {% endif %}
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Relatório gerado automaticamente pelo Sistema de Gestão da Clínica Dentária</p>
+            <p>{{ data_geracao }}</p>
+        </div>
+    </div>
+</body>
+</html>

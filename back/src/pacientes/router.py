@@ -56,13 +56,14 @@ def criar_paciente(
     """
     # (exemplo simples → qualquer user autenticado pode criar;
     #   ajusta se quiseres restrições por perfil)
-    paciente = service.criar_paciente(db, dados, utilizador_atual.id)
+    paciente = service.criar_paciente(db, dados, utilizador_atual.id, dados.clinica_id)
 
     # Criação automática da ficha clínica (TODO mover para consultas no futuro)
     service.criar_ficha_clinica(
         db,
         schemas.FichaClinicaCreate(paciente_id=paciente.id),
         utilizador_atual.id,
+        dados.clinica_id
     )
     return paciente
 
@@ -115,7 +116,9 @@ def atualizar_paciente(
     Qualquer utilizador com permissão de receção ou master admin
     pode editar dados do paciente.
     """
-    return service.atualizar_paciente(db, paciente_id, dados, utilizador_atual.id)
+    # Get the patient to retrieve their clinica_id (can't be changed in update)
+    paciente = service.obter_paciente(db, paciente_id)
+    return service.atualizar_paciente(db, paciente_id, dados, utilizador_atual.id, paciente.clinica_id)
 
 
 # ---------- FICHA CLÍNICA ----------

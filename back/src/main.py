@@ -22,6 +22,8 @@ from src.pdf.router import router as pdf_router
 from src.email.router import router as email_router
 from src.mensagens.router import router as mensagens_router
 from src.relatorios.router import router as relatorios_router
+from src.auditoria.context import set_current_clinica_id, clear_current_clinica_id
+from src.utilizadores.jwt import verify_token
 
 
 
@@ -52,8 +54,57 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
         return response
 
-# Add security middleware first
+
+# Auditoria context middleware - automatically sets clinica_id for audit logging
+class AuditoriaContextMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Clear any previous context
+        clear_current_clinica_id()
+
+        # Extract token from Authorization header
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header.replace("Bearer ", "")
+            try:
+                # Verify and decode the JWT token
+                payload = verify_token(token)
+                clinica_id = payload.get("clinica_id")
+
+                # If clinica_id not in JWT, try to get from session table
+                if not clinica_id:
+                    user_id = payload.get("sub")
+                    if user_id:
+                        from src.database import SessionLocal
+                        from src.utilizadores.models import Sessao
+                        db = SessionLocal()
+                        try:
+                            sessao = db.query(Sessao).filter_by(
+                                token=token,
+                                utilizador_id=int(user_id),
+                                ativo=True
+                            ).first()
+                            if sessao and sessao.clinica_id:
+                                clinica_id = sessao.clinica_id
+                        finally:
+                            db.close()
+
+                # Set clinic ID in context if found
+                if clinica_id:
+                    set_current_clinica_id(clinica_id)
+            except Exception as e:
+                # If token is invalid or expired, just continue without setting context
+                # The auth dependencies will handle the actual authentication
+                pass
+
+        response = await call_next(request)
+
+        # Clear context after request is done
+        clear_current_clinica_id()
+        return response
+
+# Add middleware (order matters - last added is executed first)
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(AuditoriaContextMiddleware)
 
 # Add trusted host middleware
 app.add_middleware(

@@ -55,23 +55,38 @@ export function useApiService() {
     }
   }
   
-  async function post(endpoint: string, data: any) {
+  async function post(endpoint: string, data: any, options: RequestOptions = {}) {
     const token = useCookie('token').value;
     try {
+      // Include any additional headers from options
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...options.headers
+      };
+
       const response = await fetch(`${baseUrl}${endpoint}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers,
         body: JSON.stringify(data)
       });
-      
+
       if (!response.ok) {
         throw new Error(`Erro na API: ${response.status}`);
       }
-      
-      return response.json();
+
+      // Handle different response types
+      switch (options.responseType) {
+        case 'text':
+          return response.text();
+        case 'blob':
+          return response.blob();
+        case 'arraybuffer':
+          return response.arrayBuffer();
+        case 'json':
+        default:
+          return response.json();
+      }
     } catch (error) {
       console.error(`POST ${endpoint} falhou:`, error);
       throw error;
