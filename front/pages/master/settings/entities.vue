@@ -1,15 +1,5 @@
 <script setup lang="ts">
-import {
-  Search,
-  Plus,
-  Edit,
-  ShieldOff,
-  CheckCircle,
-  BadgePlus,
-  Building,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-vue-next";
+import { Search, Plus } from "lucide-vue-next";
 import { ref, onMounted } from "vue";
 import { useToast } from "@/components/ui/toast";
 
@@ -27,8 +17,7 @@ const { toast } = useToast();
 const config = useRuntimeConfig();
 const baseUrl = config.public.apiBase;
 
-const currentPage = ref(1);
-const pageSize = ref(10);
+const entidades = ref<Entidade[]>([]);
 
 const filteredEntidades = computed(() => {
   if (!searchQuery.value) return entidades.value;
@@ -39,16 +28,13 @@ const filteredEntidades = computed(() => {
   );
 });
 
-const pageCount = computed(() =>
-  Math.ceil(filteredEntidades.value.length / pageSize.value)
-);
-
-const paginatedEntidades = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  return filteredEntidades.value.slice(start, start + pageSize.value);
-});
-
-const entidades = ref<Entidade[]>([]);
+// Use pagination composable
+const {
+  currentPage,
+  pageSize,
+  paginatedItems: paginatedEntidades,
+  totalItems,
+} = usePagination(filteredEntidades);
 const editingEntidade = ref<Entidade | null>(null);
 
 // Clean mapping: always convert to primitives
@@ -171,42 +157,12 @@ onMounted(fetchEntidades);
             </DialogContent>
           </Dialog>
 
-          <div class="flex items-center justify-between mt-4">
-            <div class="text-sm text-muted-foreground">
-              Mostrando
-              {{ (currentPage - 1) * pageSize + 1 }}‑
-              {{ Math.min(currentPage * pageSize, filteredEntidades.length) }}
-              de {{ filteredEntidades.length }} entidades
-            </div>
-            <div class="flex flex-wrap items-center space-x-2">
-              <button
-                class="icon-btn"
-                :disabled="currentPage === 1"
-                @click="currentPage = Math.max(1, currentPage - 1)"
-              >
-                <ChevronLeft class="h-4 w-4" />
-              </button>
-              <span class="text-sm font-medium">
-                Página {{ currentPage }} de {{ pageCount }}
-              </span>
-              <button
-                class="icon-btn"
-                :disabled="currentPage === pageCount"
-                @click="currentPage = Math.min(pageCount, currentPage + 1)"
-              >
-                <ChevronRight class="h-4 w-4" />
-              </button>
-              <select
-                v-model.number="pageSize"
-                class="h-8 w-[70px] rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option :value="5">5</option>
-                <option :value="10">10</option>
-                <option :value="20">20</option>
-                <option :value="50">50</option>
-              </select>
-            </div>
-          </div>
+          <!-- Pagination -->
+          <UiTablePagination
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :total-items="totalItems"
+          />
         </CardContent>
       </Card>
     </div>

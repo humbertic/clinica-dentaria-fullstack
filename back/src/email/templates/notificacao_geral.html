@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}{{ assunto }}{% endblock %}
+
+{% block content %}
+
+<h2 style="margin-top:0;font-size:20px;color:#2c5aa0;">{{ assunto }}</h2>
+
+<p>Olá <strong>{{ utilizador.nome|default('') }}</strong>,</p>
+
+<div style="margin: 24px 0; padding: 20px; background: #f9fafb; border-left: 4px solid #2c5aa0; border-radius: 4px;">
+  {{ mensagem|safe }}
+</div>
+
+<p style="margin-top: 32px;">
+Se tiver dúvidas, não hesite em contactar-nos.
+</p>
+
+<p>Atenciosamente,<br>
+Equipa <strong>{{ clinica.nome|default('Clínica Dentária') }}</strong></p>
+
+{% endblock %}

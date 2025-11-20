@@ -2,14 +2,7 @@
 import { useToast } from "@/components/ui/toast";
 // import ClinicsEmail from '@/components/clinics/ClinicEmail.vue';
 import { useCookie, useRouter, useRuntimeConfig, useState } from "#app";
-import {
-  Search,
-  Plus,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-  FileText,
-} from "lucide-vue-next";
+import { Search, Plus, Settings, FileText } from "lucide-vue-next";
 import { computed, onMounted, ref } from "vue";
 
 // Defina o tipo da clínica
@@ -71,6 +64,25 @@ const mappedClinics = computed(() =>
     parentName: c.clinica_pai?.nome, // Add parent name directly
   }))
 );
+
+const filteredClinics = computed(() => {
+  if (!searchQuery.value) return mappedClinics.value;
+  const query = searchQuery.value.toLowerCase();
+  return mappedClinics.value.filter(
+    (c) =>
+      c.name.toLowerCase().includes(query) ||
+      c.email?.toLowerCase().includes(query) ||
+      c.morada?.toLowerCase().includes(query)
+  );
+});
+
+// Use pagination composable
+const {
+  currentPage,
+  pageSize,
+  paginatedItems: paginatedClinics,
+  totalItems,
+} = usePagination(filteredClinics);
 
 function selectClinic(clinic: Clinic) {
   selectedClinic.value = clinics.value.find((c) => c.id === clinic.id) || null;
@@ -150,7 +162,7 @@ function redirectToConfig(clinic: Clinic) {
         </CardHeader>
         <CardContent>
           <ClinicsClinicTable
-            :clinics="mappedClinics"
+            :clinics="paginatedClinics"
             :clinic="selectedClinic"
             @edit="editClinic"
             @delete="
@@ -165,23 +177,12 @@ function redirectToConfig(clinic: Clinic) {
             @selectClinic="selectClinic"
           />
 
-          <div class="flex items-center justify-between mt-4">
-            <div class="text-sm text-muted-foreground">
-              Mostrando 1-{{ Math.min(clinics.length, 10) }} de
-              {{ clinics.length }} clínicas
-            </div>
-            <div class="flex items-center space-x-2">
-              <Button variant="outline" size="icon" disabled>
-                <ChevronLeft class="h-4 w-4" />
-                <span class="sr-only">Página anterior</span>
-              </Button>
-              <div class="text-sm font-medium">Página 1 de 1</div>
-              <Button variant="outline" size="icon" disabled>
-                <ChevronRight class="h-4 w-4" />
-                <span class="sr-only">Próxima página</span>
-              </Button>
-            </div>
-          </div>
+          <!-- Pagination -->
+          <UiTablePagination
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :total-items="totalItems"
+          />
         </CardContent>
       </Card>
 

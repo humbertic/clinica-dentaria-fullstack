@@ -1,16 +1,5 @@
 <script setup lang="ts">
-import {
-  Search,
-  Plus,
-  Edit,
-  ShieldOff,
-  CheckCircle,
-  BadgePlus,
-  Building,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-vue-next";
-
+import { Search, Plus } from "lucide-vue-next";
 import { useToast } from "@/components/ui/toast";
 
 const { toast } = useToast();
@@ -42,15 +31,13 @@ const nextId = (() => {
 })();
 
 const users = ref<User[]>([]);
-
 const searchQuery = ref("");
-const pageSize = ref(10);
-const currentPage = ref(1);
 
 const showCreateDialog = ref(false);
 const showEditDialog = ref(false);
 const showAssignProfilesDialog = ref(false);
 const showAssignClinicDialog = ref(false);
+const showSendEmailDialog = ref(false);
 
 const selectedUser = ref<User | null>(null);
 const selectedClinic = ref("");
@@ -88,19 +75,16 @@ const filteredUsers = computed(() => {
   );
 });
 
-const paginatedUsers = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  return filteredUsers.value.slice(start, start + pageSize.value);
-});
-
-const pageCount = computed(() =>
-  Math.max(1, Math.ceil(filteredUsers.value.length / pageSize.value))
-);
+// Use pagination composable
+const {
+  currentPage,
+  pageSize,
+  paginatedItems: paginatedUsers,
+  totalItems,
+} = usePagination(filteredUsers);
 
 const config = useRuntimeConfig();
 const baseUrl = config.public.apiBase;
-
-watch([filteredUsers, pageSize], () => (currentPage.value = 1));
 
 function onUserCreated(newUser: User) {
   const { id, ...userWithoutId } = newUser;
@@ -217,6 +201,7 @@ function handleAssignClinicasSaved() {
 function closeAuxDialogs() {
   showAssignProfilesDialog.value = false;
   showAssignClinicDialog.value = false;
+  showSendEmailDialog.value = false;
   selectedUser.value = null;
 }
 
@@ -226,6 +211,16 @@ function onUserUpdated(updatedUser: User) {
   }
   showEditDialog.value = false;
   selectedUser.value = null;
+}
+
+/* -------- send email ------------------------------------------ */
+function openSendEmail(user: User) {
+  selectedUser.value = user;
+  showSendEmailDialog.value = true;
+}
+
+function handleEmailSent() {
+  closeAuxDialogs();
 }
 
 
@@ -273,45 +268,15 @@ onMounted(fetchUsers);
             @assign-profiles="openAssignProfiles"
             @assign-clinic="openAssignClinic"
             @unblock="unblockUser"
+            @send-email="openSendEmail"
           />
 
-          <div class="flex items-center justify-between mt-4">
-            <div class="text-sm text-muted-foreground">
-              Mostrando
-              {{ (currentPage - 1) * pageSize + 1 }}‑{{
-                Math.min(currentPage * pageSize, filteredUsers.length)
-              }}
-              de {{ filteredUsers.length }} utilizadores
-            </div>
-            <div class="flex flex-wrap items-center space-x-2">
-              <button
-                class="icon-btn"
-                :disabled="currentPage === 1"
-                @click="currentPage = Math.max(1, currentPage - 1)"
-              >
-                <ChevronLeft class="h-4 w-4" />
-              </button>
-              <span class="text-sm font-medium">
-                Página {{ currentPage }} de {{ pageCount }}
-              </span>
-              <button
-                class="icon-btn"
-                :disabled="currentPage === pageCount"
-                @click="currentPage = Math.min(pageCount, currentPage + 1)"
-              >
-                <ChevronRight class="h-4 w-4" />
-              </button>
-              <select
-                v-model.number="pageSize"
-                class="h-8 w-[70px] rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option :value="5">5</option>
-                <option :value="10">10</option>
-                <option :value="20">20</option>
-                <option :value="50">50</option>
-              </select>
-            </div>
-          </div>
+          <!-- Pagination -->
+          <UiTablePagination
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :total-items="totalItems"
+          />
         </CardContent>
       </Card>
 
@@ -360,5 +325,13 @@ onMounted(fetchUsers);
         />
       </DialogContent>
     </Dialog>
+
+    <!-- Send Email Dialog -->
+    <UsersSendEmailDialog
+      :user="selectedUser"
+      :open="showSendEmailDialog"
+      @update:open="showSendEmailDialog = $event"
+      @sent="handleEmailSent"
+    />
   </div>
 </template>

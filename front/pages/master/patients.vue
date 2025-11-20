@@ -1,11 +1,5 @@
 <script setup lang="ts">
-import {
-  Plus,
-  FileText,
-  ChevronLeft,
-  ChevronRight,
-  Search,
-} from "lucide-vue-next";
+import { Plus, FileText, Search } from "lucide-vue-next";
 import { useToast } from "@/components/ui/toast";
 import { parseDate } from "@internationalized/date";
 import { useCookie, useRouter, useRuntimeConfig, useState } from "nuxt/app";
@@ -86,6 +80,14 @@ const mappedRows = computed(() =>
     }))
 );
 
+// Use pagination composable
+const {
+  currentPage,
+  pageSize,
+  paginatedItems: paginatedRows,
+  totalItems,
+} = usePagination(mappedRows);
+
 function newPaciente() {
   selectedPaciente.value = null;
   dialogs.pacienteForm = true;
@@ -155,7 +157,7 @@ watch(
 
         <CardContent>
           <PatientsTable
-            :rows="mappedRows"
+            :rows="paginatedRows"
             @edit="editPaciente"
             @delete="
               dialogs.danger = true;
@@ -165,21 +167,12 @@ watch(
             @details="redirectToDetail"
           />
 
-          <div class="flex items-center justify-between mt-4">
-            <div class="text-sm text-muted-foreground">
-              Mostrando 1–{{ Math.min(pacientes.length, 10) }} de
-              {{ pacientes.length }} pacientes
-            </div>
-            <div class="flex items-center space-x-2">
-              <Button variant="outline" size="icon" disabled
-                ><ChevronLeft class="h-4 w-4"
-              /></Button>
-              <div class="text-sm font-medium">Página 1 de 1</div>
-              <Button variant="outline" size="icon" disabled
-                ><ChevronRight class="h-4 w-4"
-              /></Button>
-            </div>
-          </div>
+          <!-- Pagination -->
+          <UiTablePagination
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :total-items="totalItems"
+          />
         </CardContent>
       </Card>
 

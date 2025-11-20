@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search, Plus, ChevronLeft, ChevronRight } from "lucide-vue-next";
+import { Search, Plus } from "lucide-vue-next";
 import { ref, onMounted } from "vue";
 import { useToast } from "@/components/ui/toast";
 import ArticlesTable from "@/components/articles/Table.vue";
@@ -20,9 +20,6 @@ const showEditDialog = ref(false);
 const editingArtigo = ref<Artigo | null>(null);
 const searchQuery = ref("");
 
-const currentPage = ref(1);
-const pageSize = ref(10);
-
 const filteredArtigos = computed(() => {
   if (!searchQuery.value) return artigos.value;
   return artigos.value.filter(
@@ -33,18 +30,13 @@ const filteredArtigos = computed(() => {
   );
 });
 
-const pageCount = computed(() =>
-  Math.ceil(filteredArtigos.value.length / pageSize.value)
-);
-
-const paginatedArtigos = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  return filteredArtigos.value.slice(start, start + pageSize.value);
-});
-
-watch(searchQuery, () => {
-  currentPage.value = 1;
-});
+// Use pagination composable
+const {
+  currentPage,
+  pageSize,
+  paginatedItems: paginatedArtigos,
+  totalItems,
+} = usePagination(filteredArtigos);
 
 const { toast } = useToast();
 const config = useRuntimeConfig();
@@ -159,42 +151,12 @@ onMounted(fetchArtigos);
         </CardHeader>
         <CardContent>
           <ArticlesTable :artigos="paginatedArtigos" @edit="openEditDialog" @delete="handleDelete"/>
-          <div class="flex items-center justify-between mt-4">
-            <div class="text-sm text-muted-foreground">
-              Mostrando
-              {{ (currentPage - 1) * pageSize + 1 }}‑
-              {{ Math.min(currentPage * pageSize, filteredArtigos.length) }}
-              de {{ filteredArtigos.length }} artigos
-            </div>
-            <div class="flex flex-wrap items-center space-x-2">
-              <button
-                class="icon-btn"
-                :disabled="currentPage === 1"
-                @click="currentPage = Math.max(1, currentPage - 1)"
-              >
-                <ChevronLeft class="h-4 w-4" />
-              </button>
-              <span class="text-sm font-medium">
-                Página {{ currentPage }} de {{ pageCount }}
-              </span>
-              <button
-                class="icon-btn"
-                :disabled="currentPage === pageCount"
-                @click="currentPage = Math.min(pageCount, currentPage + 1)"
-              >
-                <ChevronRight class="h-4 w-4" />
-              </button>
-              <select
-                v-model.number="pageSize"
-                class="h-8 w-[70px] rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option :value="5">5</option>
-                <option :value="10">10</option>
-                <option :value="20">20</option>
-                <option :value="50">50</option>
-              </select>
-            </div>
-          </div>
+          <!-- Pagination -->
+          <UiTablePagination
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :total-items="totalItems"
+          />
 
           <!-- Create Dialog -->
           <Dialog v-model:open="showCreateDialog">

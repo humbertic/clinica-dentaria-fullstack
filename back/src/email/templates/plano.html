@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Plano de Tratamento #{{ plano.id }}{% endblock %}
+
+{% block content %}
+
+<h2 style="margin-top:0;font-size:20px;color:#2c5aa0;">Plano de Tratamento #{{ plano.id }}</h2>
+
+<p>Olá <strong>{{ paciente.nome|default('Paciente') }}</strong>,</p>
+
+<p>
+Segue, em anexo, o seu plano de tratamento personalizado elaborado pela
+{{ clinica.nome|default('nossa clínica') }}.
+</p>
+
+<table style="width:100%;border-collapse:collapse;font-size:14px;margin:24px 0">
+  <tr>
+    <td style="padding:8px 0;color:#7d8a9a">Data de Início:</td>
+    <td style="padding:8px 0;text-align:right;font-weight:600">
+      {{ plano.data_inicio|default('—') }}
+    </td>
+  </tr>
+  {% if plano.data_fim %}
+  <tr style="border-top:1px solid #e5e9f0">
+    <td style="padding:8px 0;color:#7d8a9a">Data de Conclusão Prevista:</td>
+    <td style="padding:8px 0;text-align:right;font-weight:600">
+      {{ plano.data_fim }}
+    </td>
+  </tr>
+  {% endif %}
+  <tr style="border-top:1px solid #e5e9f0">
+    <td style="padding:8px 0;color:#7d8a9a">Valor Total Estimado:</td>
+    <td style="padding:8px 0;text-align:right;font-weight:600">
+      {{ plano.total_planejado }}
+    </td>
+  </tr>
+  <tr style="border-top:1px solid #e5e9f0">
+    <td style="padding:8px 0;color:#7d8a9a">Estado:</td>
+    <td style="padding:8px 0;text-align:right;font-weight:600">
+      {{ plano.estado }}
+    </td>
+  </tr>
+</table>
+
+{% if plano.observacoes %}
+<p style="margin-bottom:24px">
+<strong>Observações:</strong> {{ plano.observacoes }}
+</p>
+{% endif %}
+
+<p style="margin-bottom:32px">
+Este plano de tratamento foi elaborado especificamente para si, tendo em conta as suas necessidades dentárias atuais.
+O documento anexo contém os detalhes completos de todos os procedimentos planejados.
+</p>
+
+<p style="margin-bottom:16px">
+Se tiver dúvidas ou desejar esclarecer qualquer aspeto do plano, responda a este e-mail ou
+contacte-nos pelos nossos canais habituais. Estamos à disposição para o ajudar.
+</p>
+
+<p>Atenciosamente,<br>
+Equipa <strong>{{ clinica.nome|default('Clínica Dentária') }}</strong></p>
+
+{% endblock %}

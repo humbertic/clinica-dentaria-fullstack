@@ -60,13 +60,21 @@
     <!-- Tabela de orçamentos usando o novo componente -->
     <div v-else class="rounded-lg shadow overflow-hidden border p-4">
       <h2 class="text-md font-semibold mb-4">Lista de Orçamentos</h2>
-      <OrcamentosOrcamentoTable 
-        :orcamentos="orcamentosFiltrados" 
+      <OrcamentosOrcamentoTable
+        :orcamentos="orcamentosPaginados"
         :pacientes="pacientes"
         :entidades="entidades"
+        :clinica="selectedClinic"
         @edit="editarOrcamento($event.id)"
         @approve="updateOrcamentoStatus($event, 'aprovado')"
         @reject="updateOrcamentoStatus($event, 'rejeitado')"
+      />
+
+      <!-- Pagination -->
+      <UiTablePagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :total-items="totalItems"
       />
     </div>
   </div>
@@ -187,6 +195,13 @@ const orcamentosFiltrados = computed(() => {
   });
 });
 
+// Use pagination composable
+const {
+  currentPage,
+  pageSize,
+  paginatedItems: orcamentosPaginados,
+  totalItems,
+} = usePagination(orcamentosFiltrados);
 
 const getEstadoLabel = (estado: string) => {
   switch (estado) {

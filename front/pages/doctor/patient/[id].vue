@@ -255,6 +255,7 @@ watch(
         v-if="activeTab === 'planos'"
         :isLoading="isLoading"
         :planos="paciente.planos || []"
+        :paciente-email="paciente.email"
         @new="newPlano"
         @view="viewPlano"
         @edit="editPlano"
