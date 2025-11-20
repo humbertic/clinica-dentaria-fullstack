@@ -151,7 +151,7 @@ import type { UserActivitySummary, UserActivityDetail } from '~/types/contabilid
 
 definePageMeta({
   middleware: 'auth',
-  layout: 'dashboard'
+  layout: 'default'
 })
 
 const route = useRoute()

@@ -126,7 +126,7 @@ const breadcrumbMap: Record<string, string> = {
   "/master/users": "Gerir Utilizadores",
   "/master/clinics/settings": "Configurações",
   "/master/stock": "Gerir Stock",
-  "/master/reports": "Contabilidade",
+  "/master/contabilidade": "Contabilidade",
   "/master/patients": "Gerir Pacientes",
   "/master/patient": "Gerir Pacientes",
   "/master/settings/entities": "Entidades",
@@ -165,6 +165,7 @@ const mainSection = computed(() => {
   if (route.path.match(/^\/frontdesk\/patient\/\d+$/)) return "/frontdesk/patients";
   if (route.path.startsWith("/master/patients")) return "/master/patients";
   if (route.path.match(/^\/doctor\/patient\/\d+$/)) return "/doctor/patients";
+  if (route.path.startsWith("/master/contabilidade")) return "/master/contabilidade";
   return route.path;
 });
 

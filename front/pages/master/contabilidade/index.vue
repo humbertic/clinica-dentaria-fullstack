@@ -233,7 +233,7 @@ import type { OperationsSummary } from '~/types/contabilidade'
 
 definePageMeta({
   middleware: 'auth',
-  layout: 'dashboard'
+  layout: 'default'
 })
 
 const { getDashboard } = useContabilidade()

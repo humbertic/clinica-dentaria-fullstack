@@ -241,7 +241,7 @@ import type { FinancialOperationsSummary } from '~/types/contabilidade'
 
 definePageMeta({
   middleware: 'auth',
-  layout: 'dashboard'
+  layout: 'default'
 })
 
 const { getFinancialSummary } = useContabilidade()
