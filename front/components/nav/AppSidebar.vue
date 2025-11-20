@@ -129,7 +129,7 @@ const menuConfigurations: MenuConfigurations = {
     { title: "Orcamentos", url: "/master/orcamentos", icon: Receipt },
     { title: "Marcações", url: "/master/marcacoes", icon: Receipt },
     { title: "Historico", url: "/master/historico", icon: Receipt },
-    { title: "Contabilidade", url: "/master/reports", icon: Receipt },
+    { title: "Contabilidade", url: "/master/contabilidade", icon: BarChart2 },
   ],
   doctor: [
     { title: "Início", url: "/doctor", icon: Home },
