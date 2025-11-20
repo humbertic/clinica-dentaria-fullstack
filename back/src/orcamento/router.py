@@ -2,6 +2,8 @@
 from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
 from src.database import SessionLocal
+from src.utilizadores.dependencies import get_current_user
+from src.utilizadores.models import Utilizador
 from typing import List, Optional
 from datetime import date
 
@@ -35,12 +37,14 @@ def get_db():
     status_code=status.HTTP_201_CREATED,
 )
 def criar_orcamento(
-    payload: OrcamentoCreate, db: Session = Depends(get_db)
+    payload: OrcamentoCreate,
+    db: Session = Depends(get_db),
+    utilizador: Utilizador = Depends(get_current_user)
 ):
     """
     Cria um orçamento em **rascunho** sem itens.
     """
-    return svc.create_orcamento(db, payload)
+    return svc.create_orcamento(db, payload, utilizador)
 
 
 @router.get("", response_model=List[OrcamentoRead])
@@ -115,27 +119,29 @@ def mudar_estado(
     orc_id: int,
     body: OrcamentoUpdateEstado,
     db: Session = Depends(get_db),
+    utilizador: Utilizador = Depends(get_current_user)
 ):
     """
     Muda o estado para **aprovado** ou **rejeitado**.
     Só permitido se regras de negócio forem cumpridas.
     """
-    return svc.set_estado(db, orc_id, body.estado)
+    return svc.set_estado(db, orc_id, body.estado, utilizador)
 
 @router.put("/{orcamento_id}", response_model=OrcamentoRead)
 def atualizar_orcamento_endpoint(
-    orcamento_id: int, 
-    dados: OrcamentoUpdate, 
-    db: Session = Depends(get_db)
+    orcamento_id: int,
+    dados: OrcamentoUpdate,
+    db: Session = Depends(get_db),
+    utilizador: Utilizador = Depends(get_current_user)
 ):
     """
     Atualiza um orçamento existente.
-    
+
     Regras:
     - Entidade só pode ser alterada se não houver itens
     - Apenas orçamentos em estado 'rascunho' podem ser alterados
     """
-    return svc.atualizar_orcamento(db, orcamento_id, dados)
+    return svc.atualizar_orcamento(db, orcamento_id, dados, utilizador)
 
 # ─────────────────────────────────────────────────────────────
 #   Itens do orçamento
@@ -150,12 +156,13 @@ def adicionar_item(
     orc_id: int,
     item: OrcamentoItemCreate,
     db: Session = Depends(get_db),
+    utilizador: Utilizador = Depends(get_current_user)
 ):
     """
     Adiciona linha ao orçamento (só se estiver em rascunho).
     Calcula subtotais e actualiza totais do cabeçalho.
     """
-    return svc.add_item(db, orc_id, item)
+    return svc.add_item(db, orc_id, item, utilizador)
 
 
 @router.delete(
@@ -166,8 +173,9 @@ def remover_item(
     orc_id: int,
     item_id: int,
     db: Session = Depends(get_db),
+    utilizador: Utilizador = Depends(get_current_user)
 ):
     """
     Remove linha do orçamento e recalcula totais.
     """
-    svc.delete_item(db, orc_id, item_id)
+    svc.delete_item(db, orc_id, item_id, utilizador)

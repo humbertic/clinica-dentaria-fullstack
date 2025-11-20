@@ -103,7 +103,7 @@ def atualizar_marcacao(
     Atualiza campos de uma marcação (paciente, médico, clínica, entidade,
     data_hora, observações e/ou estado).
     """
-    return service.update_marcacao(db, marc_id, payload)
+    return service.update_marcacao(db, marc_id, payload, utilizador_atual)
 
 
 @router.put(
@@ -126,7 +126,7 @@ def mudar_estado(
             status.HTTP_400_BAD_REQUEST,
             detail="Deve especificar um novo estado."
         )
-    return service.set_estado(db, marc_id, payload.estado)
+    return service.set_estado(db, marc_id, payload.estado, utilizador_atual)
 
 
 
@@ -143,5 +143,5 @@ def remover_marcacao(
     """
     Exclui permanentemente a marcação especificada.
     """
-    service.delete_marcacao(db, marc_id)
+    service.delete_marcacao(db, marc_id, utilizador_atual)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

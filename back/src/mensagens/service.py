@@ -5,6 +5,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 from src.mensagens import models, schemas
 from src.utilizadores.models import Utilizador, UtilizadorClinica
+from src.auditoria.utils import registrar_auditoria
 
 
 # ---------- helpers -------------------------------------------------
@@ -99,6 +100,15 @@ def criar_mensagem(
     db.add(msg)
     db.commit()
     db.refresh(msg)
+
+    # Audit logging (only for new threads or clinic-wide messages)
+    if dados.tipo_thread == "clinic" or not dados.thread_id:
+        tipo_thread_desc = "clínica" if dados.tipo_thread == "clinic" else f"thread #{thread.id}"
+        registrar_auditoria(
+            db, remetente.id, "Criação", "Mensagem", msg.id,
+            f"Mensagem enviada em {tipo_thread_desc}"
+        )
+
     return msg
 
 

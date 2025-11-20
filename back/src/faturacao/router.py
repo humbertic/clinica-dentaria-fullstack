@@ -51,7 +51,7 @@ def criar_fatura(
     db: Session = Depends(get_db),
     utilizador: Utilizador = Depends(get_current_user),
 ):
-    return service.create_fatura(db, payload)
+    return service.create_fatura(db, payload, utilizador)
 
 
 @router.post("/{fatura_id}/itens", response_model=schemas.FaturaItemRead, status_code=status.HTTP_201_CREATED, summary="Adicionar item à fatura")
@@ -61,7 +61,7 @@ def adicionar_item(
     db: Session = Depends(get_db),
     utilizador: Utilizador = Depends(get_current_user),
 ):
-    return service.add_item(db, fatura_id, payload)
+    return service.add_item(db, fatura_id, payload, utilizador)
 
 
 @router.post("/{fatura_id}/parcelas", response_model=List[schemas.ParcelaRead], status_code=status.HTTP_201_CREATED, summary="Definir parcelas para fatura de plano")
@@ -71,7 +71,7 @@ def definir_parcelas(
     db: Session = Depends(get_db),
     utilizador: Utilizador = Depends(get_current_user),
 ):
-    return service.generate_parcelas(db, fatura_id, payload)
+    return service.generate_parcelas(db, fatura_id, payload, utilizador)
 
 
 @router.post("/parcelas/{parcela_id}/pagamento", response_model=schemas.ParcelaRead, summary="Registar pagamento de parcela")
@@ -90,7 +90,8 @@ def pagar_parcela(
         data_pagamento=pagamento.data_pagamento,
         observacoes=pagamento.observacoes if hasattr(pagamento, 'observacoes') else None,
         session_id=session_id,
-        operador_id= utilizador.id if session_id else None
+        operador_id=utilizador.id if session_id else None,
+        user=utilizador
     )
 
 
@@ -113,5 +114,6 @@ def pagar_fatura_direto(
         data_pagamento=pagamento.data_pagamento,
         observacoes=pagamento.observacoes if hasattr(pagamento, 'observacoes') else None,
         session_id=session_id,
-        operador_id= utilizador.id if session_id else None
+        operador_id=utilizador.id if session_id else None,
+        user=utilizador
     )

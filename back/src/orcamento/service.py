@@ -5,6 +5,9 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import date, timedelta
 
+from src.auditoria.utils import registrar_auditoria
+from src.utilizadores.models import Utilizador
+
 from src.database import SessionLocal
 from src.orcamento.schemas import (
     OrcamentoCreate,
@@ -50,11 +53,13 @@ def _recalc_totais(orc: Orcamento) -> None:
 #    Funções públicas
 # ───────────────────────────────────────────────────────────────
 
-def create_orcamento(db: Session, data: OrcamentoCreate) -> Orcamento:
+def create_orcamento(db: Session, data: OrcamentoCreate, user: Utilizador) -> Orcamento:
     # confirma FK
-    if not db.get(Paciente, data.paciente_id):
+    paciente = db.get(Paciente, data.paciente_id)
+    if not paciente:
         raise HTTPException(404, "Paciente não encontrado")
-    if not db.get(Entidade, data.entidade_id):
+    entidade = db.get(Entidade, data.entidade_id)
+    if not entidade:
         raise HTTPException(404, "Entidade não encontrada")
 
     orc = Orcamento(
@@ -66,6 +71,13 @@ def create_orcamento(db: Session, data: OrcamentoCreate) -> Orcamento:
     db.add(orc)
     db.commit()
     db.refresh(orc)
+
+    # Audit logging
+    registrar_auditoria(
+        db, user.id, "Criação", "Orçamento", orc.id,
+        f"Orçamento #{orc.id} criado para paciente {paciente.nome} - Entidade: {entidade.nome}"
+    )
+
     return orc
 
 
@@ -150,7 +162,7 @@ def get_recent_orcamentos(db: Session, dias: int = 30) -> List[Orcamento]:
     data_inicio = date.today() - timedelta(days=dias)
     return list_orcamentos(db, data_inicio=data_inicio)
 
-def add_item(db: Session, orc_id: int, item_in: OrcamentoItemCreate) -> OrcamentoItem:
+def add_item(db: Session, orc_id: int, item_in: OrcamentoItemCreate, user: Utilizador) -> OrcamentoItem:
     orc = get_orcamento(db, orc_id)
     if orc.estado != EstadoOrc.rascunho:
         raise HTTPException(400, "Só pode editar rascunho")
@@ -196,11 +208,18 @@ def add_item(db: Session, orc_id: int, item_in: OrcamentoItemCreate) -> Orcament
     _recalc_totais(orc)
     db.commit()
     db.refresh(item)
+
+    # Audit logging
+    registrar_auditoria(
+        db, user.id, "Atualização", "Orçamento", orc.id,
+        f"Item adicionado ao orçamento #{orc.id} - Artigo: {artigo.descricao}, Dente: {item_in.numero_dente or 'N/A'}"
+    )
+
     return item
 
 
 
-def delete_item(db: Session, orc_id: int, item_id: int) -> None:
+def delete_item(db: Session, orc_id: int, item_id: int, user: Utilizador) -> None:
     orc = get_orcamento(db, orc_id)
     if orc.estado != EstadoOrc.rascunho:
         raise HTTPException(400, "Orçamento não está em rascunho")
@@ -209,33 +228,54 @@ def delete_item(db: Session, orc_id: int, item_id: int) -> None:
     if not item or item.orcamento_id != orc_id:
         raise HTTPException(404, "Item não encontrado")
 
+    # Store item info before deleting
+    artigo_desc = item.artigo.descricao if item.artigo else f"Item #{item_id}"
+
     db.delete(item)
     db.flush()
     db.refresh(orc)
     _recalc_totais(orc)
     db.commit()
 
+    # Audit logging
+    registrar_auditoria(
+        db, user.id, "Atualização", "Orçamento", orc.id,
+        f"Item removido do orçamento #{orc.id} - {artigo_desc}"
+    )
 
-def set_estado(db: Session, orc_id: int, novo_estado: EstadoOrc) -> Orcamento:
+
+def set_estado(db: Session, orc_id: int, novo_estado: EstadoOrc, user: Utilizador) -> Orcamento:
     orc = get_orcamento(db, orc_id)
 
     if novo_estado == EstadoOrc.aprovado and not orc.itens:
         raise HTTPException(400, "Não é possível aprovar orçamento sem itens")
 
+    estado_anterior = orc.estado
     orc.estado = novo_estado
     db.commit()
     db.refresh(orc)
+
+    # Audit logging
+    estado_ant_str = estado_anterior.value if hasattr(estado_anterior, 'value') else str(estado_anterior)
+    estado_novo_str = novo_estado.value if hasattr(novo_estado, 'value') else str(novo_estado)
+    registrar_auditoria(
+        db, user.id, "Atualização", "Orçamento", orc.id,
+        f"Estado do orçamento #{orc.id} alterado de '{estado_ant_str}' para '{estado_novo_str}'"
+    )
+
     return orc
 
 
-def atualizar_orcamento(db: Session, orc_id: int, dados: OrcamentoUpdate) -> Orcamento:
+def atualizar_orcamento(db: Session, orc_id: int, dados: OrcamentoUpdate, user: Utilizador) -> Orcamento:
     """Atualiza dados de um orçamento. Regras especiais aplicadas para cada campo."""
     orc = get_orcamento(db, orc_id)
-    
+
     # Verifica estado - só pode editar rascunhos
     if orc.estado != EstadoOrc.rascunho:
         raise HTTPException(400, "Só é possível editar orçamentos em rascunho")
-    
+
+    campos_alterados = []
+
     # Validação para alteração de entidade
     if dados.entidade_id is not None and dados.entidade_id != orc.entidade_id:
         # Verifica se tem itens
@@ -244,22 +284,34 @@ def atualizar_orcamento(db: Session, orc_id: int, dados: OrcamentoUpdate) -> Orc
                 status_code=400,
                 detail="Não é possível alterar a entidade de um orçamento que já possui itens"
             )
-        
+
         # Verifica se a entidade existe
-        if not db.get(Entidade, dados.entidade_id):
+        entidade = db.get(Entidade, dados.entidade_id)
+        if not entidade:
             raise HTTPException(404, "Entidade não encontrada")
-            
+
+        campos_alterados.append(f"Entidade: {entidade.nome}")
         orc.entidade_id = dados.entidade_id
-    
+
     # Campos que podem ser atualizados sempre
     if dados.data is not None:
+        campos_alterados.append(f"Data: {dados.data}")
         orc.data = dados.data
-    
+
     if dados.observacoes is not None:
+        campos_alterados.append("Observações")
         orc.observacoes = dados.observacoes
-    
+
     db.commit()
     db.refresh(orc)
+
+    # Audit logging
+    if campos_alterados:
+        registrar_auditoria(
+            db, user.id, "Atualização", "Orçamento", orc.id,
+            f"Orçamento #{orc.id} atualizado - Campos: {', '.join(campos_alterados)}"
+        )
+
     return orc
 
 def get_orcamento_details(db: Session, orcamento_id: int):
