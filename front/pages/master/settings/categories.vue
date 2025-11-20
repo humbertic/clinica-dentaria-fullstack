@@ -23,14 +23,14 @@ const loading = ref(false);
 
 const { toast } = useToast();
 
-const { fetchCategorias } = useCategorias();
+const { categorias, fetchCategorias } = useCategorias();
 
 const currentPage = ref(1);
 const pageSize = ref(10);
 
 const filteredCategorias = computed(() => {
-  if (!searchQuery.value) return Categorias.value;
-  return Categorias.value.filter(
+  if (!searchQuery.value) return categorias.value;
+  return categorias.value.filter(
     (e) =>
       e.nome.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       e.slug.toLowerCase().includes(searchQuery.value.toLowerCase())
@@ -46,7 +46,6 @@ const paginatedCategorias = computed(() => {
   return filteredCategorias.value.slice(start, start + pageSize.value);
 });
 
-const Categorias = ref<Categoria[]>([]);
 const editingCategoria = ref<Categoria | null>(null);
 
 // Clean mapping: always convert to primitives
@@ -75,8 +74,7 @@ function handleCancel() {
 async function loadCategorias() {
   loading.value = true;
   try {
-    const data = await fetchCategorias();
-    Categorias.value = Array.isArray(data) ? data : [];
+    await fetchCategorias();
   } catch (e) {
     toast({
       title: "Erro ao buscar Categorias",
