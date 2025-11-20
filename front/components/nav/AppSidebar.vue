@@ -14,6 +14,9 @@ import {
   BarChart2,
   Receipt,
   Wallet,
+  FileText,
+  CalendarCheck,
+  History,
 } from "lucide-vue-next";
 
 // Tipagem para os itens do menu
@@ -109,7 +112,7 @@ const menuConfigurations: MenuConfigurations = {
       title: "Início",
       url: "/master",
       icon: Home,
-     
+
     },
     {
       title: "Definições",
@@ -126,9 +129,9 @@ const menuConfigurations: MenuConfigurations = {
     { title: "Gerir Utilizadores", url: "/master/users", icon: UserCog },
     { title: "Gerir Stock", url: "/master/stock", icon: ClipboardList },
     { title: "Pacientes", url: "/master/patients", icon: Users },
-    { title: "Orcamentos", url: "/master/orcamentos", icon: Receipt },
-    { title: "Marcações", url: "/master/marcacoes", icon: Receipt },
-    { title: "Historico", url: "/master/historico", icon: Receipt },
+    { title: "Orcamentos", url: "/master/orcamentos", icon: FileText },
+    { title: "Marcações", url: "/master/marcacoes", icon: CalendarCheck },
+    { title: "Historico", url: "/master/historico", icon: History },
     { title: "Contabilidade", url: "/master/contabilidade", icon: BarChart2 },
   ],
   doctor: [

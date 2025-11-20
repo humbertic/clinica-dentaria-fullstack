@@ -51,7 +51,7 @@
                     Ver
                   </Button>
                   <Button
-                    v-if="getValorPendente(fatura) > 0"
+                    v-if="getValorPendente(fatura) > 0 && fatura.estado !== 'paga' && fatura.estado !== 'pago'"
                     variant="default"
                     size="sm"
                     @click="$emit('pay', fatura.id)"
