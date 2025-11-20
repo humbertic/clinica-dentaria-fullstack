@@ -4,6 +4,9 @@ from typing import Optional, List
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
+from src.auditoria.utils import registrar_auditoria
+from src.utilizadores.models import Utilizador
+
 from src.comuns.enums import MetodoPagamento
 from src.caixa.models import CaixaSession, CashierPayment, CaixaStatus
 from src.caixa.schemas import (
@@ -113,6 +116,13 @@ def open_session(db: Session, payload: CaixaSessionCreate, operador_id: int) -> 
     db.add(session)
     db.commit()
     db.refresh(session)
+
+    # Audit logging
+    registrar_auditoria(
+        db, operador_id, "Criação", "CaixaSession", session.id,
+        f"Sessão de caixa #{session.id} aberta - Valor inicial: {session.valor_inicial}€"
+    )
+
     return session
 
 def fetch_pending(db: Session, session_id: int) -> dict:
@@ -245,8 +255,16 @@ def register_payment(
         db.add(payment)
         db.commit()
         db.refresh(payment)
+
+        # Audit logging
+        tipo_pagamento = f"Parcela #{payload.parcela_id}" if payload.parcela_id else f"Fatura #{payload.fatura_id}"
+        registrar_auditoria(
+            db, operador_id, "Criação", "CashierPayment", payment.id,
+            f"Pagamento registrado na sessão #{session_id} - {tipo_pagamento}, Valor: {payload.valor_pago}€, Método: {metodo.value}"
+        )
+
         return payment
-        
+
     except Exception as e:
         db.rollback()
         raise HTTPException(
@@ -275,7 +293,7 @@ def update_fatura_state(db: Session, fatura_id: int):
     
     db.commit()
 
-def close_session(db: Session, session_id: int, payload: CloseSessionRequest) -> CaixaSession:
+def close_session(db: Session, session_id: int, payload: CloseSessionRequest, user: Utilizador) -> CaixaSession:
     session = db.get(CaixaSession, session_id)
     if not session or session.status != CaixaStatus.aberto:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Sessão inválida ou já fechada")
@@ -285,4 +303,12 @@ def close_session(db: Session, session_id: int, payload: CloseSessionRequest) ->
     session.status = CaixaStatus.fechado
     db.commit()
     db.refresh(session)
+
+    # Audit logging
+    diferenca = float(payload.valor_final) - float(session.valor_inicial)
+    registrar_auditoria(
+        db, user.id, "Atualização", "CaixaSession", session.id,
+        f"Sessão de caixa #{session.id} fechada - Valor final: {payload.valor_final}€, Diferença: {diferenca:+.2f}€"
+    )
+
     return session

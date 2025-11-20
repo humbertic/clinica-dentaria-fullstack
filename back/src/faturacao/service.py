@@ -5,6 +5,9 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, status
 
+from src.auditoria.utils import registrar_auditoria
+from src.utilizadores.models import Utilizador
+
 from src.orcamento.models import EstadoOrc, Orcamento, OrcamentoItem
 from src.faturacao.models import (
     Fatura,
@@ -69,7 +72,8 @@ def list_faturas(
 
 def create_fatura(
     db: Session,
-    payload: FaturaCreate
+    payload: FaturaCreate,
+    user: Utilizador
 ) -> Fatura:
     # 1) Validate paciente
     paciente = db.get(Paciente, payload.paciente_id)
@@ -216,13 +220,22 @@ def create_fatura(
     fatura.total = total
     db.commit()
     db.refresh(fatura)
+
+    # 6) Audit logging
+    tipo_descricao = "consulta" if fatura.tipo == FaturaTipo.consulta else "plano"
+    registrar_auditoria(
+        db, user.id, "Criação", "Fatura", fatura.id,
+        f"Fatura #{fatura.id} de {tipo_descricao} criada para paciente {paciente.nome} - Total: {fatura.total}€"
+    )
+
     return fatura
 
 
 def add_item(
     db: Session,
     fatura_id: int,
-    payload: FaturaItemCreate
+    payload: FaturaItemCreate,
+    user: Utilizador
 ) -> FaturaItem:
     fatura = get_fatura(db, fatura_id)
 
@@ -264,13 +277,21 @@ def add_item(
     db.commit()
     db.refresh(item)
     db.refresh(fatura)
+
+    # 4) Audit logging
+    registrar_auditoria(
+        db, user.id, "Atualização", "Fatura", fatura.id,
+        f"Item adicionado à fatura #{fatura.id} - Qtd: {payload.quantidade}, Valor: {total_item}€"
+    )
+
     return item
 
 
 def generate_parcelas(
     db: Session,
     fatura_id: int,
-    parcel_defs: List[ParcelaCreate]
+    parcel_defs: List[ParcelaCreate],
+    user: Utilizador
 ) -> List[ParcelaPagamento]:
     fatura = get_fatura(db, fatura_id)
 
@@ -309,6 +330,13 @@ def generate_parcelas(
     db.commit()
     # atualizar instância de fatura
     db.refresh(fatura)
+
+    # Audit logging
+    registrar_auditoria(
+        db, user.id, "Criação", "Parcelas", fatura.id,
+        f"Geradas {len(created)} parcelas para fatura #{fatura.id} - Total: {fatura.total}€"
+    )
+
     return fatura.parcelas
 
 
@@ -319,8 +347,9 @@ def pay_parcela(
     metodo_pagamento: str,
     data_pagamento: Optional[datetime] = None,
     observacoes: Optional[str] = None,
-    session_id: Optional[int] = None,  
-    operador_id: Optional[int] = None  
+    session_id: Optional[int] = None,
+    operador_id: Optional[int] = None,
+    user: Optional[Utilizador] = None
 ) -> ParcelaPagamento:
     parc = db.get(ParcelaPagamento, parcela_id)
     if not parc:
@@ -379,6 +408,15 @@ def pay_parcela(
 
     db.commit()
     db.refresh(parc)
+
+    # Audit logging
+    if user:
+        estado_str = parc.estado.value if hasattr(parc.estado, 'value') else str(parc.estado)
+        registrar_auditoria(
+            db, user.id, "Atualização", "Parcela", parc.id,
+            f"Pagamento de parcela #{parc.id} (Fatura #{parc.fatura_id}) - Valor: {valor_pago}€, Método: {metodo_pagamento}, Estado: {estado_str}"
+        )
+
     return parc
 
 
@@ -389,8 +427,9 @@ def pay_fatura_direto(
     metodo_pagamento: MetodoPagamento,
     data_pagamento: Optional[datetime] = None,
     observacoes: Optional[str] = None,
-    session_id: Optional[int] = None,  
-    operador_id: Optional[int] = None  
+    session_id: Optional[int] = None,
+    operador_id: Optional[int] = None,
+    user: Optional[Utilizador] = None
 ) -> Fatura:
     """
     Process a direct payment to an invoice without going through parcelas.
@@ -473,7 +512,16 @@ def pay_fatura_direto(
             observacoes=observacoes
         )
         db.add(payment)
-    
+
     db.commit()
     db.refresh(fatura)
+
+    # Audit logging
+    if user:
+        estado_str = fatura.estado.value if hasattr(fatura.estado, 'value') else str(fatura.estado)
+        registrar_auditoria(
+            db, user.id, "Atualização", "Fatura", fatura.id,
+            f"Pagamento direto fatura #{fatura.id} - Valor: {valor_pago}€, Método: {metodo_pagamento.value}, Estado: {estado_str}"
+        )
+
     return fatura

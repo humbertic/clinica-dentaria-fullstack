@@ -4,6 +4,8 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
+from src.auditoria.utils import registrar_auditoria
+
 from src.marcacoes.models import Marcacao
 from src.marcacoes.schemas import (
     MarcacaoCreate,
@@ -53,6 +55,15 @@ def create_marcacao(
     db.add(m)
     db.commit()
     db.refresh(m)
+
+    # Audit logging
+    paciente = _get_fk_or_404(db, Utilizador, data.paciente_id, "Paciente")
+    medico = _get_fk_or_404(db, Utilizador, data.medico_id, "Médico")
+    registrar_auditoria(
+        db, agendador_id, "Criação", "Marcação", m.id,
+        f"Marcação criada para paciente ID {data.paciente_id} com médico ID {data.medico_id} - Data: {m.data_hora_inicio}"
+    )
+
     return m
 
 
@@ -92,29 +103,48 @@ def list_marcacoes(
 def update_marcacao(
     db: Session,
     marc_id: int,
-    changes: MarcacaoUpdate
+    changes: MarcacaoUpdate,
+    user: Utilizador
 ) -> Marcacao:
     m = get_marcacao(db, marc_id)
 
     # atualiza apenas campos fornecidos
     updates = changes.dict(exclude_unset=True)
+    campos_alterados = ", ".join(updates.keys()) if updates else "nenhum"
+
     for field, val in updates.items():
         setattr(m, field, val)
 
     db.commit()
     db.refresh(m)
+
+    # Audit logging
+    registrar_auditoria(
+        db, user.id, "Atualização", "Marcação", m.id,
+        f"Marcação #{m.id} atualizada - Campos alterados: {campos_alterados}"
+    )
+
     return m
 
 
 def set_estado(
     db: Session,
     marc_id: int,
-    novo_estado: str
+    novo_estado: str,
+    user: Utilizador
 ) -> Marcacao:
     m = get_marcacao(db, marc_id)
+    estado_anterior = m.estado
     m.estado = novo_estado
     db.commit()
     db.refresh(m)
+
+    # Audit logging
+    registrar_auditoria(
+        db, user.id, "Atualização", "Marcação", m.id,
+        f"Estado da marcação #{m.id} alterado de '{estado_anterior}' para '{novo_estado}'"
+    )
+
     return m
 
 
@@ -122,7 +152,8 @@ def set_estado(
 
 def delete_marcacao(
     db: Session,
-    marc_id: int
+    marc_id: int,
+    user: Utilizador
 ) -> None:
     """
     Remove a marcação com o ID especificado, apenas se estiver no estado 'agendada'.
@@ -133,6 +164,18 @@ def delete_marcacao(
             status.HTTP_400_BAD_REQUEST,
             "Só marcações com estado 'agendada' podem ser eliminadas."
         )
+
+    # Store info for audit before deleting
+    paciente_id = m.paciente_id
+    medico_id = m.medico_id
+    data_hora = m.data_hora_inicio
+
     db.delete(m)
     db.commit()
+
+    # Audit logging
+    registrar_auditoria(
+        db, user.id, "Remoção", "Marcação", marc_id,
+        f"Marcação #{marc_id} removida - Paciente ID: {paciente_id}, Médico ID: {medico_id}, Data: {data_hora}"
+    )
 

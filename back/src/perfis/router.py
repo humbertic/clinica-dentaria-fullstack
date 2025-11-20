@@ -23,7 +23,7 @@ def criar_perfil(
 ):
     if not is_master_admin(current_user):  # <-- Use the utility function
         raise HTTPException(status_code=403, detail="Apenas o Master Admin pode criar Perfis.")
-    return service.criar_perfil(db, dados)
+    return service.criar_perfil(db, dados, current_user)
 
 @router.put("/{perfil_id}", response_model=schemas.PerfilResponse)
 def atualizar_perfil(
@@ -34,7 +34,7 @@ def atualizar_perfil(
 ):
     if not is_master_admin(current_user):  # <-- Use the utility function
         raise HTTPException(status_code=403, detail="Apenas o Master Admin pode atualizar Perfis.")
-    return service.atualizar_perfil(db, perfil_id, dados)
+    return service.atualizar_perfil(db, perfil_id, dados, current_user)
 
 @router.get("/", response_model=list[schemas.PerfilResponse])
 def listar_perfis(

@@ -57,4 +57,4 @@ def close(session_id: int,
           payload: schemas.CloseSessionRequest,
           db: Session = Depends(get_db),
           user: Utilizador = Depends(frontoffice_only)):
-    return service.close_session(db, session_id, payload)
+    return service.close_session(db, session_id, payload, user)
