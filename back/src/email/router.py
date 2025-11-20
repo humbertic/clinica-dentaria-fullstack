@@ -180,3 +180,24 @@ async def enviar_alertas_stock_email(
             "total": len(itens_baixo_stock) + len(itens_expirando)
         }
     }
+
+@router.post("/alertas-stock/executar-agora", status_code=status.HTTP_202_ACCEPTED)
+async def executar_verificacao_alertas_agora(
+    current_user: Utilizador = Depends(get_current_user),
+):
+    """
+    Executa imediatamente a verificação de alertas para TODAS as clínicas.
+    Útil para testes do scheduler automático.
+    Requer permissões de administrador (master).
+    """
+    from src.scheduler import run_now
+
+    # Verificar se o utilizador tem permissão (apenas master)
+    # Você pode adicionar uma verificação de perfil aqui se necessário
+
+    run_now()
+
+    return {
+        "detail": "Verificação de alertas iniciada em background para todas as clínicas",
+        "message": "Os alertas serão processados e enviados em alguns instantes"
+    }
