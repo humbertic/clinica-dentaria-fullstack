@@ -87,3 +87,17 @@ async def enviar_cancelamento_email(
     svc = EmailManager(db, config)
     await svc.enviar_cancelamento(marc)
     return {"detail": "Cancelamento enviado"}
+
+# ---------- Plano de Tratamento -------------------------------------------
+@router.post("/plano/{plano_id}")
+async def enviar_plano_email(
+    plano_id: int,
+    clinica_id: int = Query(...),
+    email_para: Optional[EmailStr] = None,
+    db: Session = Depends(get_db),
+    current_user: Utilizador = Depends(get_current_user),
+):
+    config = await get_email_config(clinica_id, db)
+    svc = EmailManager(db, config)
+    await svc.enviar_plano(plano_id, clinica_id, email_para)
+    return {"detail": "Plano de Tratamento enviado"}

@@ -25,7 +25,7 @@ from src.orcamento.service  import get_orcamento
 from src.pacientes.service  import obter_paciente
 from src.clinica.service    import obter_clinica_por_id
 from src.marcacoes.models   import Marcacao
-from src.pdf.service        import generate_fatura_pdf, generate_orcamento_pdf
+from src.pdf.service        import generate_fatura_pdf, generate_orcamento_pdf, generate_plano_pdf
 
 # ------------------ Jinja env partilhado -----------------------
 TEMPLATE_DIR = Path(__file__).parent / "templates"
@@ -137,4 +137,39 @@ class EmailManager:
                 "marcacao": marc,
             },
             anexos=[],
+        )
+
+    # ---------- Plano de Tratamento (com anexo PDF) ------------
+    async def enviar_plano(
+        self,
+        plano_id: int,
+        clinica_id: int,
+        email_para: Optional[str] = None
+    ):
+        from src.pacientes.service import get_plano_tratamento
+
+        plano = get_plano_tratamento(self.db, plano_id)
+        if not plano:
+            raise HTTPException(404, "Plano de Tratamento não encontrado")
+
+        paciente = obter_paciente(self.db, plano.paciente_id)
+        clinica  = obter_clinica_por_id(self.db, clinica_id, None)
+
+        destinatario = email_para or paciente.email
+        if not destinatario:
+            raise HTTPException(400, "Paciente sem e-mail e parâmetro email_para ausente")
+
+        pdf  = generate_plano_pdf(plano_id, self.db)
+        anexo = EmailAttachment(filename=f"plano_tratamento_{plano_id}.pdf", content=pdf)
+
+        await self.mail.enviar_email(
+            assunto        = f"Plano de Tratamento #{plano_id}",
+            destinatarios  = [destinatario],
+            nome_template  = "plano.html",
+            dados_template = {
+                "plano": plano,
+                "paciente": paciente,
+                "clinica": clinica,
+            },
+            anexos=[anexo],
         )

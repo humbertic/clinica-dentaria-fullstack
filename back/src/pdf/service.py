@@ -333,3 +333,94 @@ def generate_orcamento_pdf(orcamento_id: int, db) -> bytes:
     print(f"Contexto para orçamento {orcamento_id}: {context}")
     html = render_template("orcamento.html", context)
     return generate_pdf(html, css_files=["styles.css"])
+
+
+# ──────────────────────────────────────────────────────────────
+# Funções específicas · Plano de Tratamento
+# ──────────────────────────────────────────────────────────────
+
+def generate_plano_pdf(plano_id: int, db) -> bytes:
+    """Gera PDF para Plano de Tratamento."""
+    from src.pacientes.service import get_plano_tratamento
+    from src.clinica.service import get_clinica_details
+
+    plano = get_plano_tratamento(db, plano_id)
+    if not plano:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail=f"Plano de Tratamento ID={plano_id} não encontrado.",
+        )
+
+    clinica = None
+    if plano.paciente:
+        # Try to get clinic_id from patient
+        paciente_clinica_id = getattr(plano.paciente, 'clinica_id', None)
+
+        if paciente_clinica_id:
+            clinica = db.query(Clinica).filter(Clinica.id == paciente_clinica_id).first()
+            print(f"Found clinic {clinica.nome} from patient association")
+
+    # Fallback to direct plano association
+    if not clinica:
+        plano_clinica_id = getattr(plano, 'clinica_id', None)
+        if plano_clinica_id:
+            clinica = db.query(Clinica).filter(Clinica.id == plano_clinica_id).first()
+            print(f"Found clinic {clinica.nome} from plano association")
+
+    # Fallback to default clinic if still not found
+    if not clinica:
+        clinica = get_clinica_details(db)
+        print(f"Using default clinic: {clinica.nome}")
+
+    # Calcular totais
+    total_planejado = 0.0
+    itens_contexto = []
+
+    for item in (plano.itens or []):
+        subtotal = float(item.preco_unitario) * item.quantidade_planejada
+        total_planejado += subtotal
+
+        itens_contexto.append({
+            "artigo": {
+                "codigo": item.artigo.codigo if item.artigo else "—",
+                "nome": item.artigo.descricao if item.artigo else item.descricao,
+            },
+            "numero_dente": getattr(item, "numero_dente", "—"),
+            "quantidade_planejada": item.quantidade_planejada,
+            "quantidade_executada": item.quantidade_executada,
+            "preco_unitario": float(item.preco_unitario),
+            "subtotal": subtotal,
+            "estado": getattr(item.estado, "value", item.estado) if hasattr(item, 'estado') else "pendente",
+            "observacoes": getattr(item, "observacoes", ""),
+        })
+
+    context: Dict[str, Any] = {
+        "clinica": clinica,
+        "plano": {
+            "id": plano.id,
+            "data_inicio": plano.data_inicio.strftime("%d/%m/%Y") if plano.data_inicio else "—",
+            "data_fim": plano.data_fim.strftime("%d/%m/%Y") if plano.data_fim else "—",
+            "estado": getattr(plano.estado, "value", plano.estado) if hasattr(plano, 'estado') else "ativo",
+            "descricao": getattr(plano, "descricao", ""),
+            "observacoes": getattr(plano, "observacoes", ""),
+            "itens": itens_contexto,
+            "total_planejado": total_planejado,
+        },
+        "paciente": {
+            "nome": plano.paciente.nome,
+            "numero_documento": getattr(plano.paciente, "numero_documento", "—"),
+            "telefone": getattr(plano.paciente, "telefone", "—"),
+            "email": getattr(plano.paciente, "email", "—"),
+        },
+        "medico": {
+            "nome": plano.medico.nome if plano.medico else "—",
+        } if hasattr(plano, 'medico') and plano.medico else None,
+        "data_geracao": datetime.now().strftime("%d/%m/%Y %H:%M"),
+        "logo_path": str(ASSETS_DIR / "logo.png")
+        if (ASSETS_DIR / "logo.png").exists()
+        else None,
+    }
+
+    print(f"Contexto para plano {plano_id}: {context}")
+    html = render_template("plano.html", context)
+    return generate_pdf(html, css_files=["styles.css"])
