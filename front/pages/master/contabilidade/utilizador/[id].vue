@@ -149,10 +149,7 @@
 <script setup lang="ts">
 import type { UserActivitySummary, UserActivityDetail } from '~/types/contabilidade'
 
-definePageMeta({
-  middleware: 'auth',
-  layout: 'default'
-})
+
 
 const route = useRoute()
 const { getUserSummary, getUserDetails } = useContabilidade()

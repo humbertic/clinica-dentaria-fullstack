@@ -13,10 +13,7 @@ import { useToast } from "@/components/ui/toast";
 import { useContabilidade } from "@/composables/useContabilidade";
 import type { FinancialOperationsSummary } from "@/types/contabilidade";
 
-definePageMeta({
-  middleware: "auth",
-  layout: "default",
-});
+
 
 const { toast } = useToast();
 const { getFinancialSummary, loading, error } = useContabilidade();

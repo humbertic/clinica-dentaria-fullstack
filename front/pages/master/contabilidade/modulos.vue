@@ -12,10 +12,6 @@ import { useToast } from "@/components/ui/toast";
 import { useContabilidade } from "@/composables/useContabilidade";
 import type { ModuleSummary } from "@/types/contabilidade";
 
-definePageMeta({
-  middleware: "auth",
-  layout: "default",
-});
 
 const { toast } = useToast();
 const { getModuleSummary, loading, error } = useContabilidade();
