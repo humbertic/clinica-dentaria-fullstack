@@ -37,6 +37,8 @@ interface PlanoItem {
 const props = defineProps<{
   isLoading: boolean;
   planos?: PlanoTratamento[];
+  clinicaId?: number;
+  pacienteEmail?: string;
 }>();
 
 const emit = defineEmits<{
@@ -44,6 +46,10 @@ const emit = defineEmits<{
   (e: "view", planoId: number): void;
   (e: "edit", planoId: number): void;
 }>();
+
+// Try to get clinica from global state if not provided as prop
+const selectedClinic = useState<{ id: number } | null>("selectedClinic", () => null);
+const effectiveClinicaId = computed(() => props.clinicaId || selectedClinic.value?.id);
 
 // Track which plans are expanded
 const expandedPlanos = ref<number[]>([]);
@@ -239,7 +245,15 @@ function formatFaces(faces: string[] | null): string {
                       </div>
                     </div>
 
-                    <div class="flex gap-2">
+                    <div class="flex gap-2 flex-wrap">
+                      <!-- Document Actions (Download, View, Email) -->
+                      <DocumentsActions
+                        type="plano"
+                        :id="plano.id"
+                        :clinica-id="effectiveClinicaId"
+                        :paciente-email="pacienteEmail"
+                      />
+
                       <Button
                         variant="outline"
                         size="sm"

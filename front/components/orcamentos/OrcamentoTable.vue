@@ -3,11 +3,13 @@ import { PencilIcon, CheckIcon, XIcon, CircleIcon } from "lucide-vue-next";
 import type { Orcamento } from "~/types/orcamento";
 import type { Paciente } from "~/types/pacientes";
 import type { Entidade } from "~/types/entidade";
+import type { Clinica } from "~/types/clinica";
 
 const props = defineProps<{
   orcamentos: Orcamento[];
   pacientes: Paciente[];
   entidades: Entidade[];
+  clinica?: Clinica | null;
   loading?: boolean;
 }>();
 
@@ -25,6 +27,14 @@ const getPacienteNome = (orcamento: Orcamento) => {
   }
   const paciente = props.pacientes.find((p) => p.id === orcamento.paciente_id);
   return paciente ? paciente.nome : `Paciente ${orcamento.paciente_id}`;
+};
+
+const getPacienteEmail = (orcamento: Orcamento) => {
+  if (orcamento.paciente?.email) {
+    return orcamento.paciente.email;
+  }
+  const paciente = props.pacientes.find((p) => p.id === orcamento.paciente_id);
+  return paciente?.email || undefined;
 };
 
 const getEntidadeNome = (orcamento: Orcamento) => {
@@ -127,7 +137,15 @@ const getEstadoClasses = (estado: string) => {
             </span>
           </TableCell>
           <TableCell>
-            <div class="flex items-center justify-center gap-2">
+            <div class="flex items-center justify-center gap-2 flex-wrap">
+              <!-- Document Actions (Download, View, Email) -->
+              <DocumentsActions
+                type="orcamento"
+                :id="orcamento.id"
+                :clinica-id="clinica?.id"
+                :paciente-email="getPacienteEmail(orcamento)"
+              />
+
               <button
                 @click="emit('edit', orcamento)"
                 class="icon-btn"
