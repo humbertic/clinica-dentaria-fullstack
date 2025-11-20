@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileBarChart2,
+  Bell,
 } from "lucide-vue-next";
 import { useToast } from "@/components/ui/toast";
 
@@ -39,6 +40,7 @@ const showMovementDialog = ref(false);
 const isNew = ref(true);
 const selectedItemId = ref<number | null>(null);
 const transfer = ref(<string>"");
+const sendingAlerts = ref(false);
 
 const config = useRuntimeConfig();
 const baseUrl = config.public.apiBase;
@@ -94,6 +96,52 @@ function onSelectItem(item: Item) {
   selectedItemId.value = item?.id ?? null;
 }
 
+async function enviarAlertasStock() {
+  const token = useCookie("token").value;
+  sendingAlerts.value = true;
+
+  try {
+    if (!selectedClinic.value) {
+      throw new Error("Nenhuma clínica selecionada");
+    }
+
+    const res = await fetch(
+      `${baseUrl}email/alertas-stock?clinica_id=${selectedClinic.value.id}&dias_expiracao=30`,
+      {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      }
+    );
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.detail || "Erro ao enviar alertas");
+    }
+
+    const data = await res.json();
+
+    if (data.alertas.total === 0) {
+      toast({
+        title: "Sem alertas",
+        description: "Não há alertas de stock para enviar.",
+      });
+    } else {
+      toast({
+        title: "Alertas enviados",
+        description: `${data.alertas.total} alerta(s) enviado(s) para os assistentes: ${data.alertas.itens_baixo_stock} stock baixo, ${data.alertas.itens_expirando} a expirar.`,
+      });
+    }
+  } catch (e) {
+    toast({
+      title: "Erro ao enviar alertas",
+      description: e instanceof Error ? e.message : String(e),
+      variant: "destructive",
+    });
+  } finally {
+    sendingAlerts.value = false;
+  }
+}
+
 watch(selectedClinic, () => {
   fetchItems();
 });
@@ -109,6 +157,14 @@ onMounted(fetchItems);
     >
       <h1 class="text-2xl font-semibold">Gestão de Stock</h1>
       <div class="flex gap-2">
+        <Button
+          variant="outline"
+          @click="enviarAlertasStock"
+          :disabled="sendingAlerts"
+        >
+          <Bell class="mr-2 h-4 w-4" />
+          {{ sendingAlerts ? 'Enviando...' : 'Enviar Alertas' }}
+        </Button>
         <Button variant="default" @click="openItemDialog(true)">
           <Plus class="mr-2 h-4 w-4" />
           Novo Item

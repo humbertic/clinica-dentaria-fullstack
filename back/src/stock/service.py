@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -268,3 +268,54 @@ def registrar_movimento_saida(db: Session, item_id: int, quantidade: int, user_i
 
 def get_proximo_lote(db: Session, item_id: int):
     return db.query(models.ItemLote).filter_by(item_id=item_id).order_by(models.ItemLote.validade).first()
+
+# --------- ALERTAS DE STOCK ---------
+def verificar_alertas_stock(db: Session, clinica_id: int, dias_expiracao: int = 30):
+    """
+    Verifica itens com stock baixo e itens com lotes a expirar.
+    Retorna um dicionário com duas listas: itens_baixo_stock e itens_expirando.
+    """
+    itens = db.query(models.ItemStock).filter_by(clinica_id=clinica_id, ativo=True).all()
+
+    itens_baixo_stock = []
+    itens_expirando = []
+    data_limite = date.today() + timedelta(days=dias_expiracao)
+
+    for item in itens:
+        quantidade_atual = get_quantidade_atual(db, item.id)
+
+        # Verificar stock baixo
+        if quantidade_atual < item.quantidade_minima:
+            itens_baixo_stock.append({
+                "id": item.id,
+                "nome": item.nome,
+                "quantidade_atual": quantidade_atual,
+                "quantidade_minima": item.quantidade_minima,
+                "tipo_medida": item.tipo_medida
+            })
+
+        # Verificar lotes a expirar
+        lotes_expirando = db.query(models.ItemLote).filter(
+            models.ItemLote.item_id == item.id,
+            models.ItemLote.quantidade > 0,
+            models.ItemLote.validade <= data_limite,
+            models.ItemLote.validade >= date.today()
+        ).all()
+
+        if lotes_expirando:
+            for lote in lotes_expirando:
+                dias_restantes = (lote.validade - date.today()).days
+                itens_expirando.append({
+                    "id": item.id,
+                    "nome": item.nome,
+                    "lote": lote.lote,
+                    "quantidade": lote.quantidade,
+                    "validade": lote.validade,
+                    "dias_restantes": dias_restantes,
+                    "tipo_medida": item.tipo_medida
+                })
+
+    return {
+        "itens_baixo_stock": itens_baixo_stock,
+        "itens_expirando": itens_expirando
+    }

@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Alertas de Stock{% endblock %}
+
+{% block header %}
+<h1>⚠️ Alertas de Stock</h1>
+<p style="margin:8px 0 0 0; font-size:14px; opacity:0.9">
+  {{ clinica.nome|default('Clínica Dentária') }}
+</p>
+{% endblock %}
+
+{% block content %}
+<p style="margin:0 0 24px 0; color:#555">
+  Olá,
+</p>
+
+<p style="margin:0 0 24px 0; color:#555">
+  Este é um alerta automático do sistema de gestão de stock.
+  Foram detetados <strong>{{ total_alertas }}</strong> alerta(s) que requerem a sua atenção:
+</p>
+
+<!-- Alertas de Stock Baixo -->
+{% if itens_baixo_stock %}
+<div style="margin:0 0 32px 0">
+  <h2 style="margin:0 0 16px 0; font-size:18px; color:#e74c3c; font-weight:600">
+    🔴 Stock Baixo ({{ itens_baixo_stock|length }})
+  </h2>
+  <p style="margin:0 0 12px 0; font-size:14px; color:#666">
+    Os seguintes itens estão abaixo da quantidade mínima:
+  </p>
+
+  <table style="width:100%; border-collapse:collapse; font-size:14px; background:#fff; border:1px solid #e0e6ed">
+    <thead>
+      <tr style="background:#f7f9fb">
+        <th style="padding:12px; text-align:left; border-bottom:2px solid #e0e6ed; font-weight:600; color:#444">
+          Item
+        </th>
+        <th style="padding:12px; text-align:center; border-bottom:2px solid #e0e6ed; font-weight:600; color:#444">
+          Atual
+        </th>
+        <th style="padding:12px; text-align:center; border-bottom:2px solid #e0e6ed; font-weight:600; color:#444">
+          Mínimo
+        </th>
+        <th style="padding:12px; text-align:center; border-bottom:2px solid #e0e6ed; font-weight:600; color:#444">
+          Estado
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in itens_baixo_stock %}
+      <tr style="border-bottom:1px solid #f0f0f0">
+        <td style="padding:12px; color:#333">
+          {{ item.nome }}
+        </td>
+        <td style="padding:12px; text-align:center; color:#e74c3c; font-weight:600">
+          {{ item.quantidade_atual }} {{ item.tipo_medida|default('un') }}
+        </td>
+        <td style="padding:12px; text-align:center; color:#666">
+          {{ item.quantidade_minima }} {{ item.tipo_medida|default('un') }}
+        </td>
+        <td style="padding:12px; text-align:center">
+          <span style="display:inline-block; padding:4px 12px; background:#fee; color:#c33; border-radius:12px; font-size:12px; font-weight:600">
+            CRÍTICO
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- Alertas de Itens a Expirar -->
+{% if itens_expirando %}
+<div style="margin:0 0 32px 0">
+  <h2 style="margin:0 0 16px 0; font-size:18px; color:#f39c12; font-weight:600">
+    ⏰ Itens a Expirar ({{ itens_expirando|length }})
+  </h2>
+  <p style="margin:0 0 12px 0; font-size:14px; color:#666">
+    Os seguintes lotes estão próximos da data de validade:
+  </p>
+
+  <table style="width:100%; border-collapse:collapse; font-size:14px; background:#fff; border:1px solid #e0e6ed">
+    <thead>
+      <tr style="background:#f7f9fb">
+        <th style="padding:12px; text-align:left; border-bottom:2px solid #e0e6ed; font-weight:600; color:#444">
+          Item
+        </th>
+        <th style="padding:12px; text-align:center; border-bottom:2px solid #e0e6ed; font-weight:600; color:#444">
+          Lote
+        </th>
+        <th style="padding:12px; text-align:center; border-bottom:2px solid #e0e6ed; font-weight:600; color:#444">
+          Quantidade
+        </th>
+        <th style="padding:12px; text-align:center; border-bottom:2px solid #e0e6ed; font-weight:600; color:#444">
+          Validade
+        </th>
+        <th style="padding:12px; text-align:center; border-bottom:2px solid #e0e6ed; font-weight:600; color:#444">
+          Dias
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in itens_expirando %}
+      <tr style="border-bottom:1px solid #f0f0f0">
+        <td style="padding:12px; color:#333">
+          {{ item.nome }}
+        </td>
+        <td style="padding:12px; text-align:center; color:#666; font-family:monospace">
+          {{ item.lote }}
+        </td>
+        <td style="padding:12px; text-align:center; color:#666">
+          {{ item.quantidade }} {{ item.tipo_medida|default('un') }}
+        </td>
+        <td style="padding:12px; text-align:center; color:#666">
+          {{ item.validade.strftime('%d/%m/%Y') }}
+        </td>
+        <td style="padding:12px; text-align:center">
+          {% if item.dias_restantes <= 7 %}
+          <span style="display:inline-block; padding:4px 12px; background:#fee; color:#c33; border-radius:12px; font-size:12px; font-weight:600">
+            {{ item.dias_restantes }} dias
+          </span>
+          {% elif item.dias_restantes <= 15 %}
+          <span style="display:inline-block; padding:4px 12px; background:#ffeaa7; color:#d63031; border-radius:12px; font-size:12px; font-weight:600">
+            {{ item.dias_restantes }} dias
+          </span>
+          {% else %}
+          <span style="display:inline-block; padding:4px 12px; background:#fff3cd; color:#856404; border-radius:12px; font-size:12px; font-weight:600">
+            {{ item.dias_restantes }} dias
+          </span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- Ações Recomendadas -->
+<div style="margin:32px 0 0 0; padding:16px; background:#f8f9fa; border-left:4px solid #2c5aa0; border-radius:4px">
+  <h3 style="margin:0 0 12px 0; font-size:16px; color:#2c5aa0; font-weight:600">
+    📋 Ações Recomendadas
+  </h3>
+  <ul style="margin:0; padding:0 0 0 20px; color:#555; line-height:1.8">
+    {% if itens_baixo_stock %}
+    <li>Verifique os itens com stock baixo e faça encomendas necessárias</li>
+    {% endif %}
+    {% if itens_expirando %}
+    <li>Priorize o uso dos lotes próximos do vencimento</li>
+    <li>Considere devolver ou descartar itens que não serão utilizados a tempo</li>
+    {% endif %}
+    <li>Atualize os registos de stock no sistema após tomar as medidas necessárias</li>
+  </ul>
+</div>
+
+<p style="margin:24px 0 0 0; font-size:14px; color:#666">
+  Este email foi gerado automaticamente pelo sistema de gestão de stock.
+  Por favor, não responda a este email.
+</p>
+
+<p style="margin:16px 0 0 0; font-size:14px; color:#666">
+  Atenciosamente,<br>
+  <strong>{{ clinica.nome|default('Clínica Dentária') }}</strong>
+</p>
+{% endblock %}

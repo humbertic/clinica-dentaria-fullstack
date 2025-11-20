@@ -211,3 +211,56 @@ class EmailManager:
             },
             anexos=[],
         )
+
+    # ---------- Alertas de Stock (para assistentes) ---------------
+    async def enviar_alertas_stock(
+        self,
+        clinica_id: int,
+        itens_baixo_stock: List[Dict[str, Any]],
+        itens_expirando: List[Dict[str, Any]]
+    ):
+        """
+        Envia alertas de stock baixo e itens a expirar para todos os assistentes da clínica.
+        """
+        from src.utilizadores.models import UtilizadorClinica
+        from src.perfis.models import Perfil
+
+        # Se não há alertas, não envia email
+        if not itens_baixo_stock and not itens_expirando:
+            return
+
+        # Buscar assistentes da clínica
+        assistentes = self.db.query(UtilizadorClinica).join(Perfil).filter(
+            UtilizadorClinica.clinica_id == clinica_id,
+            UtilizadorClinica.ativo == True,
+            Perfil.perfil == "assistente"
+        ).all()
+
+        if not assistentes:
+            # Nenhum assistente encontrado, não envia
+            return
+
+        clinica = obter_clinica_por_id(self.db, clinica_id, None)
+
+        # Preparar lista de emails
+        emails_assistentes = []
+        for assoc in assistentes:
+            if assoc.utilizador and assoc.utilizador.email:
+                emails_assistentes.append(assoc.utilizador.email)
+
+        if not emails_assistentes:
+            return
+
+        # Enviar email para todos os assistentes
+        await self.mail.enviar_email(
+            assunto        = f"⚠️ Alertas de Stock - {clinica.nome if clinica else 'Clínica'}",
+            destinatarios  = emails_assistentes,
+            nome_template  = "alerta_stock.html",
+            dados_template = {
+                "clinica": clinica,
+                "itens_baixo_stock": itens_baixo_stock,
+                "itens_expirando": itens_expirando,
+                "total_alertas": len(itens_baixo_stock) + len(itens_expirando),
+            },
+            anexos=[],
+        )
