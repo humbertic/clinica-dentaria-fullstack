@@ -247,6 +247,7 @@ watch(
 
     <PatientsForm
       :open="dialogs.pacienteForm"
+      :id="selectedPaciente?.id"
       :paciente="
         selectedPaciente
           ? {
@@ -261,7 +262,7 @@ watch(
             }
           : undefined
       "
-      @saved="fetchPacientes"
+      @save="fetchPacientes"
       @update:open="dialogs.pacienteForm = $event"
     />
 
