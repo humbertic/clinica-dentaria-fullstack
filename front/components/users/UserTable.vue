@@ -15,6 +15,7 @@ import {
   CheckCircle,
   BadgePlus,
   Building,
+  Mail,
 } from "lucide-vue-next";
 
 /** Mirror your User type here (or import it) */
@@ -49,6 +50,7 @@ const emit = defineEmits<{
   (e: "assign-profiles", user: User): void;
   (e: "assign-clinic", user: User): void;
   (e: "unblock", user: User): void;
+  (e: "send-email", user: User): void;
 }>();
 </script>
 
@@ -115,7 +117,10 @@ const emit = defineEmits<{
             <span v-else class="text-green-500">Não</span>
           </TableCell>
           <TableCell>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <button @click="emit('send-email', u)" class="icon-btn" title="Enviar Email">
+                <Mail class="h-4 w-4" />
+              </button>
               <button @click="emit('edit', u)" class="icon-btn" title="Editar">
                 <Edit class="h-4 w-4" />
               </button>

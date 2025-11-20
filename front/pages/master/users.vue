@@ -51,6 +51,7 @@ const showCreateDialog = ref(false);
 const showEditDialog = ref(false);
 const showAssignProfilesDialog = ref(false);
 const showAssignClinicDialog = ref(false);
+const showSendEmailDialog = ref(false);
 
 const selectedUser = ref<User | null>(null);
 const selectedClinic = ref("");
@@ -217,6 +218,7 @@ function handleAssignClinicasSaved() {
 function closeAuxDialogs() {
   showAssignProfilesDialog.value = false;
   showAssignClinicDialog.value = false;
+  showSendEmailDialog.value = false;
   selectedUser.value = null;
 }
 
@@ -226,6 +228,16 @@ function onUserUpdated(updatedUser: User) {
   }
   showEditDialog.value = false;
   selectedUser.value = null;
+}
+
+/* -------- send email ------------------------------------------ */
+function openSendEmail(user: User) {
+  selectedUser.value = user;
+  showSendEmailDialog.value = true;
+}
+
+function handleEmailSent() {
+  closeAuxDialogs();
 }
 
 
@@ -273,6 +285,7 @@ onMounted(fetchUsers);
             @assign-profiles="openAssignProfiles"
             @assign-clinic="openAssignClinic"
             @unblock="unblockUser"
+            @send-email="openSendEmail"
           />
 
           <div class="flex items-center justify-between mt-4">
@@ -360,5 +373,13 @@ onMounted(fetchUsers);
         />
       </DialogContent>
     </Dialog>
+
+    <!-- Send Email Dialog -->
+    <UsersSendEmailDialog
+      :user="selectedUser"
+      :open="showSendEmailDialog"
+      @update:open="showSendEmailDialog = $event"
+      @sent="handleEmailSent"
+    />
   </div>
 </template>

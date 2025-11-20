@@ -173,3 +173,41 @@ class EmailManager:
             },
             anexos=[anexo],
         )
+
+    # ---------- Email para Utilizador (mensagem customizada) ------
+    async def enviar_email_utilizador(
+        self,
+        utilizador_id: int,
+        clinica_id: int,
+        assunto: str,
+        mensagem: str,
+        email_para: Optional[str] = None
+    ):
+        """
+        Envia um email customizado para um utilizador.
+        Usa um template genérico com o conteúdo fornecido.
+        """
+        from src.utilizadores.service import obter_utilizador
+
+        utilizador = obter_utilizador(self.db, utilizador_id)
+        if not utilizador:
+            raise HTTPException(404, "Utilizador não encontrado")
+
+        clinica = obter_clinica_por_id(self.db, clinica_id, None)
+
+        destinatario = email_para or utilizador.email
+        if not destinatario:
+            raise HTTPException(400, "Utilizador sem e-mail e parâmetro email_para ausente")
+
+        await self.mail.enviar_email(
+            assunto        = assunto,
+            destinatarios  = [destinatario],
+            nome_template  = "notificacao_geral.html",
+            dados_template = {
+                "utilizador": utilizador,
+                "clinica": clinica,
+                "assunto": assunto,
+                "mensagem": mensagem,
+            },
+            anexos=[],
+        )

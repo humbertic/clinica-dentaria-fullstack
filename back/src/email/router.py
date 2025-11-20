@@ -1,7 +1,7 @@
 from typing import Optional, List
 
-from fastapi import APIRouter, Depends, Query, HTTPException, status
-from pydantic import EmailStr
+from fastapi import APIRouter, Depends, Query, HTTPException, status, Body
+from pydantic import EmailStr, BaseModel
 from sqlalchemy.orm import Session
 
 from src.database import SessionLocal
@@ -10,6 +10,13 @@ from src.utilizadores.models import Utilizador
 from src.email.service import EmailManager
 from src.email.util import get_email_config, test_email_config
 from src.marcacoes.service import get_marcacao as obter_marcacao   # função helper no seu módulo
+
+
+# Schema para envio de email customizado
+class CustomEmailRequest(BaseModel):
+    assunto: str
+    mensagem: str
+    email_para: Optional[EmailStr] = None
 
 router = APIRouter(prefix="/email", tags=["Email"])
 
@@ -101,3 +108,27 @@ async def enviar_plano_email(
     svc = EmailManager(db, config)
     await svc.enviar_plano(plano_id, clinica_id, email_para)
     return {"detail": "Plano de Tratamento enviado"}
+
+# ---------- Email para Utilizador -----------------------------------------
+@router.post("/utilizador/{utilizador_id}")
+async def enviar_email_utilizador(
+    utilizador_id: int,
+    clinica_id: int = Query(...),
+    email_data: CustomEmailRequest = Body(...),
+    db: Session = Depends(get_db),
+    current_user: Utilizador = Depends(get_current_user),
+):
+    """
+    Envia um email customizado para um utilizador específico.
+    Pode usar o email do utilizador ou um email alternativo fornecido.
+    """
+    config = await get_email_config(clinica_id, db)
+    svc = EmailManager(db, config)
+    await svc.enviar_email_utilizador(
+        utilizador_id=utilizador_id,
+        clinica_id=clinica_id,
+        assunto=email_data.assunto,
+        mensagem=email_data.mensagem,
+        email_para=email_data.email_para
+    )
+    return {"detail": "Email enviado com sucesso"}
