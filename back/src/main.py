@@ -22,6 +22,7 @@ from src.pdf.router import router as pdf_router
 from src.email.router import router as email_router
 from src.mensagens.router import router as mensagens_router
 from src.relatorios.router import router as relatorios_router
+from src.contabilidade.router import router as contabilidade_router
 from src.auditoria.context import set_current_clinica_id, clear_current_clinica_id
 from src.utilizadores.jwt import verify_token
 
@@ -160,6 +161,7 @@ app.include_router(pdf_router)
 app.include_router(email_router)
 app.include_router(mensagens_router)
 app.include_router(relatorios_router)
+app.include_router(contabilidade_router)
 
 
 
