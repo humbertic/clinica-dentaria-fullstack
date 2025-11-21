@@ -301,6 +301,7 @@ import {
 } from "@/composables/useFaturacao";
 import { usePdf } from "@/composables/usePdf";
 import type { FaturaRead, ParcelaRead } from "@/types/fatura";
+import type { Clinica } from "@/types/clinica";
 import { useToast } from "@/components/ui/toast/use-toast";
 import { FileTextIcon, EyeIcon, DownloadIcon, MailIcon, ChevronDownIcon } from 'lucide-vue-next';
 
@@ -314,6 +315,8 @@ const { toast } = useToast();
 const { get, post } = useApiService();
 
 const { fatura: pdfFatura } = usePdf();
+const { enviarFatura } = useEmail();
+const selectedClinic = useState<Clinica | null>("selectedClinic");
 // Formatters and labels
 const getTipoLabel = (t: string) =>
   ({ consulta: "Consulta", plano: "Plano de Tratamento" }[t] || t);
@@ -505,6 +508,14 @@ async function downloadPdf() {
 }
 
 async function sendEmail() {
-  await pdfFatura.email(localFatura.value.id);
+  if (!selectedClinic.value) {
+    toast({
+      title: "Erro",
+      description: "Nenhuma clínica selecionada",
+      variant: "destructive",
+    });
+    return;
+  }
+  await enviarFatura(localFatura.value.id, selectedClinic.value.id);
 }
 </script>
