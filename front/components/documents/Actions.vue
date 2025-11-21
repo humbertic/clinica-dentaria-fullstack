@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Download, Mail, Eye, Loader2 } from "lucide-vue-next";
-import { useToast } from "@/components/ui/toast";
 import { computed, ref } from "vue";
+import type { Clinica } from "~/types/clinica";
 
 type DocumentType = "fatura" | "orcamento" | "plano";
 
@@ -12,17 +12,16 @@ const props = defineProps<{
   pacienteEmail?: string;
 }>();
 
-const { toast } = useToast();
-const config = useRuntimeConfig();
-const baseUrl = config.public.apiBase;
-const token = useCookie("token").value;
+// Composables
+const { viewPdf, downloadPdf, loading: pdfLoading } = usePdf();
+const {
+  enviarFatura,
+  enviarOrcamento,
+  enviarPlano,
+  loading: emailLoading,
+} = useEmail();
 
-const loading = ref({
-  download: false,
-  view: false,
-  email: false,
-});
-
+// State
 const showEmailDialog = ref(false);
 const customEmail = ref("");
 
@@ -38,87 +37,20 @@ const documentLabel = computed(() => {
 
 const pdfEndpoint = computed(() => {
   const endpoints: Record<DocumentType, string> = {
-    fatura: `faturacao/faturas/${props.id}/pdf`,
-    orcamento: `orcamento/${props.id}/pdf`,
-    plano: `planos/${props.id}/pdf`,
-  };
-  return endpoints[props.type];
-});
-
-const emailEndpoint = computed(() => {
-  const endpoints: Record<DocumentType, string> = {
-    fatura: `email/fatura/${props.id}`,
-    orcamento: `email/orcamento/${props.id}`,
-    plano: `email/plano/${props.id}`,
+    fatura: `pdf/fatura/${props.id}`,
+    orcamento: `pdf/orcamento/${props.id}`,
+    plano: `pdf/plano/${props.id}`,
   };
   return endpoints[props.type];
 });
 
 // Methods
-async function downloadPDF() {
-  loading.value.download = true;
-  try {
-    const response = await fetch(`${baseUrl}${pdfEndpoint.value}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-
-    if (!response.ok) {
-      throw new Error(`Erro ao baixar PDF: ${response.statusText}`);
-    }
-
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${props.type}_${props.id}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-
-    toast({
-      title: "Sucesso",
-      description: `${documentLabel.value} baixado com sucesso`,
-    });
-  } catch (error) {
-    console.error("Erro ao baixar PDF:", error);
-    toast({
-      title: "Erro",
-      description:
-        error instanceof Error ? error.message : "Erro ao baixar PDF",
-      variant: "destructive",
-    });
-  } finally {
-    loading.value.download = false;
-  }
+async function handleDownload() {
+  await downloadPdf(pdfEndpoint.value, `${props.type}_${props.id}.pdf`);
 }
 
-async function viewPDF() {
-  loading.value.view = true;
-  try {
-    const response = await fetch(`${baseUrl}${pdfEndpoint.value}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-
-    if (!response.ok) {
-      throw new Error(`Erro ao visualizar PDF: ${response.statusText}`);
-    }
-
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    window.open(url, "_blank");
-    window.URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error("Erro ao visualizar PDF:", error);
-    toast({
-      title: "Erro",
-      description:
-        error instanceof Error ? error.message : "Erro ao visualizar PDF",
-      variant: "destructive",
-    });
-  } finally {
-    loading.value.view = false;
-  }
+async function handleView() {
+  await viewPdf(pdfEndpoint.value, `${documentLabel.value} ${props.id}`);
 }
 
 function openEmailDialog() {
@@ -128,61 +60,31 @@ function openEmailDialog() {
 
 async function sendEmail() {
   if (!customEmail.value && !props.pacienteEmail) {
-    toast({
-      title: "Erro",
-      description: "É necessário um endereço de email",
-      variant: "destructive",
-    });
     return;
   }
 
   if (!props.clinicaId) {
-    toast({
-      title: "Erro",
-      description: "ID da clínica não fornecido",
-      variant: "destructive",
-    });
     return;
   }
 
-  loading.value.email = true;
-  try {
-    const emailParam = customEmail.value || props.pacienteEmail;
-    const url = `${baseUrl}${emailEndpoint.value}?clinica_id=${props.clinicaId}${
-      emailParam ? `&email_para=${encodeURIComponent(emailParam)}` : ""
-    }`;
+  const emailPara = customEmail.value || props.pacienteEmail;
+  let success = false;
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+  // Use the appropriate composable method based on document type
+  switch (props.type) {
+    case "fatura":
+      success = await enviarFatura(props.id, props.clinicaId, emailPara);
+      break;
+    case "orcamento":
+      success = await enviarOrcamento(props.id, props.clinicaId, emailPara);
+      break;
+    case "plano":
+      success = await enviarPlano(props.id, props.clinicaId, emailPara);
+      break;
+  }
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.detail || `Erro ao enviar email: ${response.statusText}`
-      );
-    }
-
-    toast({
-      title: "Sucesso",
-      description: `${documentLabel.value} enviado por email para ${emailParam}`,
-    });
-
+  if (success) {
     showEmailDialog.value = false;
-  } catch (error) {
-    console.error("Erro ao enviar email:", error);
-    toast({
-      title: "Erro",
-      description:
-        error instanceof Error ? error.message : "Erro ao enviar email",
-      variant: "destructive",
-    });
-  } finally {
-    loading.value.email = false;
   }
 }
 </script>
@@ -193,11 +95,11 @@ async function sendEmail() {
     <Button
       variant="outline"
       size="sm"
-      @click="downloadPDF"
-      :disabled="loading.download"
+      @click="handleDownload"
+      :disabled="pdfLoading"
       title="Baixar PDF"
     >
-      <Loader2 v-if="loading.download" class="h-4 w-4 animate-spin" />
+      <Loader2 v-if="pdfLoading" class="h-4 w-4 animate-spin" />
       <Download v-else class="h-4 w-4" />
       <span class="ml-1 hidden sm:inline">Baixar</span>
     </Button>
@@ -206,11 +108,11 @@ async function sendEmail() {
     <Button
       variant="outline"
       size="sm"
-      @click="viewPDF"
-      :disabled="loading.view"
+      @click="handleView"
+      :disabled="pdfLoading"
       title="Visualizar PDF"
     >
-      <Loader2 v-if="loading.view" class="h-4 w-4 animate-spin" />
+      <Loader2 v-if="pdfLoading" class="h-4 w-4 animate-spin" />
       <Eye v-else class="h-4 w-4" />
       <span class="ml-1 hidden sm:inline">Ver</span>
     </Button>
@@ -220,7 +122,7 @@ async function sendEmail() {
       variant="outline"
       size="sm"
       @click="openEmailDialog"
-      :disabled="loading.email"
+      :disabled="emailLoading"
       title="Enviar por Email"
     >
       <Mail class="h-4 w-4" />
@@ -245,7 +147,7 @@ async function sendEmail() {
               v-model="customEmail"
               type="email"
               placeholder="email@exemplo.com"
-              :disabled="loading.email"
+              :disabled="emailLoading"
             />
             <p v-if="pacienteEmail" class="text-xs text-muted-foreground">
               Email padrão do paciente: {{ pacienteEmail }}
@@ -257,12 +159,12 @@ async function sendEmail() {
           <Button
             variant="outline"
             @click="showEmailDialog = false"
-            :disabled="loading.email"
+            :disabled="emailLoading"
           >
             Cancelar
           </Button>
-          <Button @click="sendEmail" :disabled="loading.email">
-            <Loader2 v-if="loading.email" class="h-4 w-4 mr-2 animate-spin" />
+          <Button @click="sendEmail" :disabled="emailLoading">
+            <Loader2 v-if="emailLoading" class="h-4 w-4 mr-2 animate-spin" />
             <Mail v-else class="h-4 w-4 mr-2" />
             Enviar
           </Button>
