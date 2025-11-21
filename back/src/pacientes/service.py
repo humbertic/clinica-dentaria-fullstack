@@ -498,8 +498,7 @@ def get_plano_tratamento(db: Session, plano_id: int) -> Optional[models.PlanoTra
           .options(
               selectinload(models.PlanoTratamento.itens)
                 .selectinload(models.PlanoItem.artigo),
-              selectinload(models.PlanoTratamento.paciente),
-              selectinload(models.PlanoTratamento.medico)
+              selectinload(models.PlanoTratamento.paciente)
           )
           .filter(models.PlanoTratamento.id == plano_id)
           .first()
