@@ -9,6 +9,7 @@ from src.pacientes import models, schemas
 from src.auditoria.utils import registrar_auditoria
 from sqlalchemy import func
 from src.consultas.models import Consulta, ConsultaItem
+from src.orcamento.models import OrcamentoItem
 from datetime import datetime
 import os
 import uuid
@@ -498,6 +499,9 @@ def get_plano_tratamento(db: Session, plano_id: int) -> Optional[models.PlanoTra
           .options(
               selectinload(models.PlanoTratamento.itens)
                 .selectinload(models.PlanoItem.artigo),
+              selectinload(models.PlanoTratamento.itens)
+                .selectinload(models.PlanoItem.orcamento_item)
+                .selectinload(OrcamentoItem.orcamento),
               selectinload(models.PlanoTratamento.paciente)
           )
           .filter(models.PlanoTratamento.id == plano_id)
