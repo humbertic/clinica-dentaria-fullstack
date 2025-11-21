@@ -8,72 +8,30 @@ import {
   FileBarChart2,
   Bell,
 } from "lucide-vue-next";
-import { useToast } from "@/components/ui/toast";
+import type { StockItem } from "@/types/stock";
+import type { Clinica } from "@/types/clinica";
 
+// Composables
+const { items, loading, fetchItems } = useStock();
+const { enviarAlertasStock, loading: sendingAlerts } = useEmail();
 
-
-type Item = {
-  id: number;
-  nome: string;
-  descricao: string;
-  lote_proximo: string;
-  quantidade_atual: number;
-  quantidade_minima: number;
-  validade_proxima: string;
-  tipo_medida: string;
-  fornecedor: string;
-  ativo: boolean;
-};
-
-type Clinic = {
-  id: number;
-  nome: string;
-  morada?: string;
-  email_envio?: string;
-};
-
-const { toast } = useToast();
-const selectedClinic = useState<Clinic | null>("selectedClinic");
-
+// State
+const selectedClinic = useState<Clinica | null>("selectedClinic");
 const showItemDialog = ref(false);
 const showMovementDialog = ref(false);
 const isNew = ref(true);
 const selectedItemId = ref<number | null>(null);
-const transfer = ref(<string>"");
-const sendingAlerts = ref(false);
+const transfer = ref<string>("");
 
-const config = useRuntimeConfig();
-const baseUrl = config.public.apiBase;
-
-const items = ref<Item[]>([]);
-
-async function fetchItems() {
-  const token = useCookie("token").value;
-  try {
-    if (!selectedClinic.value) {
-      throw new Error("Nenhuma clínica selecionada");
-    }
-    const res = await fetch(
-      `${baseUrl}stock/items/${selectedClinic.value.id}`,
-      {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      }
-    );
-    if (!res.ok) throw new Error("Erro ao buscar itens");
-    items.value = await res.json();
-  } catch (e) {
-    items.value = [];
-    toast({
-      title: "Erro ao buscar itens",
-      description: e instanceof Error ? e.message : String(e),
-      variant: "destructive",
-    });
+// Load items when clinic changes
+async function loadItems() {
+  if (selectedClinic.value) {
+    await fetchItems(selectedClinic.value.id);
   }
 }
 
-
-
-function openItemDialog(create = true, item?: Item) {
+// Dialog handlers
+function openItemDialog(create = true, item?: StockItem) {
   isNew.value = create;
   showItemDialog.value = true;
   selectedItemId.value = create ? null : item?.id ?? null;
@@ -84,69 +42,29 @@ function closeItemDialog() {
   selectedItemId.value = null;
 }
 
-function openMovementDialog(isTransfer = false, item: Item) {
-  if (isTransfer) {
-    selectedItemId.value = item?.id ?? null;
+function openMovementDialog(isTransfer = false, item?: StockItem) {
+  if (isTransfer && item) {
+    selectedItemId.value = item.id;
     transfer.value = "transferencia";
   }
   showMovementDialog.value = true;
 }
 
-function onSelectItem(item: Item) {
+function onSelectItem(item: StockItem) {
   selectedItemId.value = item?.id ?? null;
 }
 
-async function enviarAlertasStock() {
-  const token = useCookie("token").value;
-  sendingAlerts.value = true;
-
-  try {
-    if (!selectedClinic.value) {
-      throw new Error("Nenhuma clínica selecionada");
-    }
-
-    const res = await fetch(
-      `${baseUrl}email/alertas-stock?clinica_id=${selectedClinic.value.id}&dias_expiracao=30`,
-      {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      }
-    );
-
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.detail || "Erro ao enviar alertas");
-    }
-
-    const data = await res.json();
-
-    if (data.alertas.total === 0) {
-      toast({
-        title: "Sem alertas",
-        description: "Não há alertas de stock para enviar.",
-      });
-    } else {
-      toast({
-        title: "Alertas enviados",
-        description: `${data.alertas.total} alerta(s) enviado(s) para os assistentes: ${data.alertas.itens_baixo_stock} stock baixo, ${data.alertas.itens_expirando} a expirar.`,
-      });
-    }
-  } catch (e) {
-    toast({
-      title: "Erro ao enviar alertas",
-      description: e instanceof Error ? e.message : String(e),
-      variant: "destructive",
-    });
-  } finally {
-    sendingAlerts.value = false;
-  }
+// Send stock alerts using composable
+async function handleEnviarAlertas() {
+  if (!selectedClinic.value) return;
+  await enviarAlertasStock(selectedClinic.value.id);
 }
 
-watch(selectedClinic, () => {
-  fetchItems();
-});
+// Watch for clinic changes
+watch(selectedClinic, loadItems);
 
-onMounted(fetchItems);
+// Initial load
+onMounted(loadItems);
 </script>
 
 <template>
@@ -159,7 +77,7 @@ onMounted(fetchItems);
       <div class="flex gap-2">
         <Button
           variant="outline"
-          @click="enviarAlertasStock"
+          @click="handleEnviarAlertas"
           :disabled="sendingAlerts"
         >
           <Bell class="mr-2 h-4 w-4" />
@@ -169,7 +87,7 @@ onMounted(fetchItems);
           <Plus class="mr-2 h-4 w-4" />
           Novo Item
         </Button>
-        <Button variant="secondary" @click="openMovementDialog">
+        <Button variant="secondary" @click="openMovementDialog(false)">
           <FileInput class="mr-2 h-4 w-4" />
           Movimento Manual
         </Button>
@@ -211,8 +129,14 @@ onMounted(fetchItems);
             </div>
           </div>
 
+          <!-- Loading State -->
+          <div v-if="loading" class="flex justify-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+
           <!-- Stock Table -->
           <StockTable
+            v-else
             :items="items"
             @edit="(item) => openItemDialog(false, item)"
             @selectItem="onSelectItem"
@@ -222,14 +146,14 @@ onMounted(fetchItems);
           <!-- Pagination -->
           <div class="flex items-center justify-between">
             <div class="text-sm text-muted-foreground">
-              Mostrando 1-3 de 50 itens
+              Mostrando 1-{{ Math.min(items.length, 10) }} de {{ items.length }} itens
             </div>
             <div class="flex items-center space-x-2">
               <Button variant="outline" size="sm" disabled>
                 <ChevronLeft class="h-4 w-4" />
                 <span class="sr-only">Página anterior</span>
               </Button>
-              <div class="text-sm">Página 1 de 17</div>
+              <div class="text-sm">Página 1 de {{ Math.ceil(items.length / 10) || 1 }}</div>
               <Button variant="outline" size="sm">
                 <ChevronRight class="h-4 w-4" />
                 <span class="sr-only">Próxima página</span>
@@ -247,7 +171,7 @@ onMounted(fetchItems);
       :open="showItemDialog"
       :item-id="selectedItemId"
       @close="closeItemDialog"
-      @saved="fetchItems"
+      @saved="loadItems"
     />
 
     <StockMovementDialog
@@ -256,7 +180,7 @@ onMounted(fetchItems);
       :defaultItemId="selectedItemId"
       :defaultTipo="transfer"
       @close="showMovementDialog = false"
-      @saved="fetchItems"
+      @saved="loadItems"
     />
   </div>
 </template>
