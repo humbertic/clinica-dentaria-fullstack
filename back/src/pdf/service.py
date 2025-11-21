@@ -372,26 +372,32 @@ def generate_plano_pdf(plano_id: int, db) -> bytes:
         clinica = get_clinica_details(db)
         print(f"Using default clinic: {clinica.nome}")
 
-    # Calcular totais
+    # Calcular totais - preços vêm do orcamento_item
     total_planejado = 0.0
     itens_contexto = []
 
     for item in (plano.itens or []):
-        subtotal = float(item.preco_unitario) * item.quantidade_planejada
+        # Get price from orcamento_item (use preco_paciente as default)
+        preco_unitario = 0.0
+        if item.orcamento_item:
+            preco_unitario = float(item.orcamento_item.preco_paciente or 0)
+
+        quantidade = item.quantidade_prevista or 1
+        subtotal = preco_unitario * quantidade
         total_planejado += subtotal
 
         itens_contexto.append({
             "artigo": {
                 "codigo": item.artigo.codigo if item.artigo else "—",
-                "nome": item.artigo.descricao if item.artigo else item.descricao,
+                "nome": item.artigo.nome if item.artigo else "—",
             },
-            "numero_dente": getattr(item, "numero_dente", "—"),
-            "quantidade_planejada": item.quantidade_planejada,
-            "quantidade_executada": item.quantidade_executada,
-            "preco_unitario": float(item.preco_unitario),
+            "numero_dente": item.numero_dente if item.numero_dente else "—",
+            "quantidade_planejada": quantidade,
+            "quantidade_executada": item.quantidade_executada or 0,
+            "preco_unitario": preco_unitario,
             "subtotal": subtotal,
-            "estado": getattr(item.estado, "value", item.estado) if hasattr(item, 'estado') else "pendente",
-            "observacoes": getattr(item, "observacoes", ""),
+            "estado": item.estado if item.estado else "pendente",
+            "observacoes": "",
         })
 
     context: Dict[str, Any] = {
