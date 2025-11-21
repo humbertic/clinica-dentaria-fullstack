@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <!-- Header com estatísticas - updated with clearer information -->
-     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <Card>
         <CardContent class="p-4">
           <div class="text-center">
@@ -98,7 +98,7 @@
 
     <!-- Modal de detalhes -->
     <Dialog :open="showDetails" @update:open="showDetails = $event">
-      <DialogContent class="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent class="max-w-[95vw] sm:max-w-4xl max-h-[80vh] overflow-y-auto">
         <FaturasDetail 
           v-if="selectedFatura"
           :fatura="selectedFatura"

@@ -1,8 +1,8 @@
 <template>
   <div class="p-6">
-    <div class="flex justify-between items-center mb-6 border-b pb-4">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-4 gap-4">
       <h1 class="text-2xl font-bold">Orçamentos</h1>
-      <Button @click="criarNovoOrcamento" :disabled="loading">
+      <Button @click="criarNovoOrcamento" :disabled="loading" class="w-full sm:w-auto">
         <PlusIcon class="w-4 h-4 mr-2" />
         Novo Orçamento
       </Button>

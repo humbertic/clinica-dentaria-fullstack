@@ -1,13 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from typing import List, Optional
 from datetime import date
 
 from src.database import SessionLocal
 from src.utilizadores.dependencies import get_current_user
 from src.utilizadores.models import Utilizador
+from src.email.service import EmailManager
+from src.email.util import get_email_config
 
 from . import service, schemas
+from .models import Marcacao
 
 router = APIRouter(
     prefix="/marcacoes",
@@ -145,3 +148,177 @@ def remover_marcacao(
     """
     service.delete_marcacao(db, marc_id, utilizador_atual)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# -------- LEMBRETES E CANCELAMENTOS --------
+def _get_marcacao_with_relations(db: Session, marc_id: int) -> Marcacao:
+    """Helper to get marcacao with all relations loaded."""
+    marc = (
+        db.query(Marcacao)
+        .options(
+            selectinload(Marcacao.paciente),
+            selectinload(Marcacao.medico),
+            selectinload(Marcacao.clinic),
+        )
+        .filter(Marcacao.id == marc_id)
+        .first()
+    )
+    if not marc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Marcação não encontrada")
+    return marc
+
+
+@router.post(
+    "/{marc_id}/lembrete",
+    summary="Enviar lembrete de consulta",
+    status_code=status.HTTP_200_OK,
+)
+async def enviar_lembrete(
+    marc_id: int,
+    db: Session = Depends(get_db),
+    utilizador_atual: Utilizador = Depends(get_current_user),
+):
+    """
+    Envia um email de lembrete para o paciente sobre a consulta agendada.
+    """
+    marc = _get_marcacao_with_relations(db, marc_id)
+
+    if not marc.paciente.email:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Paciente não possui email cadastrado"
+        )
+
+    config = await get_email_config(marc.clinic_id, db)
+    email_manager = EmailManager(db, config)
+    await email_manager.enviar_lembrete(marc)
+
+    return {"detail": f"Lembrete enviado para {marc.paciente.email}"}
+
+
+@router.post(
+    "/{marc_id}/cancelamento",
+    summary="Enviar notificação de cancelamento",
+    status_code=status.HTTP_200_OK,
+)
+async def enviar_cancelamento(
+    marc_id: int,
+    db: Session = Depends(get_db),
+    utilizador_atual: Utilizador = Depends(get_current_user),
+):
+    """
+    Envia um email notificando o paciente sobre o cancelamento da consulta.
+    """
+    marc = _get_marcacao_with_relations(db, marc_id)
+
+    if not marc.paciente.email:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Paciente não possui email cadastrado"
+        )
+
+    config = await get_email_config(marc.clinic_id, db)
+    email_manager = EmailManager(db, config)
+    await email_manager.enviar_cancelamento(marc)
+
+    return {"detail": f"Notificação de cancelamento enviada para {marc.paciente.email}"}
+
+
+@router.post(
+    "/lembretes/enviar-em-massa",
+    summary="Enviar lembretes em massa",
+    status_code=status.HTTP_200_OK,
+)
+async def enviar_lembretes_em_massa(
+    marcacao_ids: List[int],
+    db: Session = Depends(get_db),
+    utilizador_atual: Utilizador = Depends(get_current_user),
+):
+    """
+    Envia lembretes de consulta para múltiplos pacientes.
+    """
+    enviados = []
+    erros = []
+
+    for marc_id in marcacao_ids:
+        try:
+            marc = _get_marcacao_with_relations(db, marc_id)
+
+            if not marc.paciente.email:
+                erros.append({
+                    "marcacao_id": marc_id,
+                    "erro": "Paciente sem email"
+                })
+                continue
+
+            config = await get_email_config(marc.clinic_id, db)
+            email_manager = EmailManager(db, config)
+            await email_manager.enviar_lembrete(marc)
+
+            enviados.append({
+                "marcacao_id": marc_id,
+                "paciente": marc.paciente.nome,
+                "email": marc.paciente.email
+            })
+        except Exception as e:
+            erros.append({
+                "marcacao_id": marc_id,
+                "erro": str(e)
+            })
+
+    return {
+        "total_enviados": len(enviados),
+        "total_erros": len(erros),
+        "enviados": enviados,
+        "erros": erros
+    }
+
+
+@router.post(
+    "/cancelamentos/enviar-em-massa",
+    summary="Enviar cancelamentos em massa",
+    status_code=status.HTTP_200_OK,
+)
+async def enviar_cancelamentos_em_massa(
+    marcacao_ids: List[int],
+    db: Session = Depends(get_db),
+    utilizador_atual: Utilizador = Depends(get_current_user),
+):
+    """
+    Envia notificações de cancelamento para múltiplos pacientes.
+    """
+    enviados = []
+    erros = []
+
+    for marc_id in marcacao_ids:
+        try:
+            marc = _get_marcacao_with_relations(db, marc_id)
+
+            if not marc.paciente.email:
+                erros.append({
+                    "marcacao_id": marc_id,
+                    "erro": "Paciente sem email"
+                })
+                continue
+
+            config = await get_email_config(marc.clinic_id, db)
+            email_manager = EmailManager(db, config)
+            await email_manager.enviar_cancelamento(marc)
+
+            enviados.append({
+                "marcacao_id": marc_id,
+                "paciente": marc.paciente.nome,
+                "email": marc.paciente.email
+            })
+        except Exception as e:
+            erros.append({
+                "marcacao_id": marc_id,
+                "erro": str(e)
+            })
+
+    return {
+        "total_enviados": len(enviados),
+        "total_erros": len(erros),
+        "enviados": enviados,
+        "erros": erros
+    }

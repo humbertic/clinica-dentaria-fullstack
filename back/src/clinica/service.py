@@ -154,6 +154,45 @@ def get_clinica_details(db: Session):
     """
     Get basic clinic information from the database.
     """
-    
+
     clinica = db.query(models.Clinica).first()
     return clinica
+
+
+# --------- ALERT CONFIGURATIONS ---------
+def get_configuracao_valor(db: Session, clinica_id: int, chave: str, default: str = None) -> str:
+    """
+    Get a configuration value for a clinic by key.
+    Returns the default if the configuration doesn't exist.
+    """
+    config = db.query(models.ClinicaConfiguracao).filter_by(
+        clinica_id=clinica_id, chave=chave
+    ).first()
+
+    if config:
+        return config.valor
+
+    # Try global config if clinic-specific not found
+    global_config = db.query(models.ClinicaConfiguracao).filter_by(
+        clinica_id=None, chave=chave
+    ).first()
+
+    if global_config:
+        return global_config.valor
+
+    return default
+
+
+def get_alert_settings(db: Session, clinica_id: int) -> dict:
+    """
+    Get all alert settings for a clinic using existing configuration keys.
+    Uses the existing database keys:
+    - alerta_data_vencimento: days before expiry to alert
+    - notificar_email_baixo_estoque: enable low stock email notifications
+    - notificar_email_vencimento: enable expiry email notifications
+    """
+    return {
+        "alerta_data_vencimento": int(get_configuracao_valor(db, clinica_id, "alerta_data_vencimento", "30") or "30"),
+        "notificar_email_baixo_estoque": get_configuracao_valor(db, clinica_id, "notificar_email_baixo_estoque", "true") == "true",
+        "notificar_email_vencimento": get_configuracao_valor(db, clinica_id, "notificar_email_vencimento", "true") == "true",
+    }

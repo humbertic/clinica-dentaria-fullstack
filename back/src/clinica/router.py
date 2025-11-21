@@ -156,3 +156,20 @@ def listar_emails(
     if not is_master_admin(utilizador_atual):
         raise HTTPException(status_code=403, detail="Apenas o Master Admin pode listar e-mails SMTP.")
     return service.listar_emails(db, clinica_id)
+
+
+# -------- ALERT SETTINGS --------
+@router.get("/{clinica_id}/alertas", response_model=schemas.AlertSettingsResponse)
+def get_alert_settings(
+    clinica_id: int,
+    db: Session = Depends(get_db),
+    utilizador_atual: utilizador_models.Utilizador = Depends(get_current_user)
+):
+    """
+    Get alert settings for a clinic.
+    Uses existing configuration keys:
+    - alerta_data_vencimento: days before expiry to alert
+    - notificar_email_baixo_estoque: enable low stock email notifications
+    - notificar_email_vencimento: enable expiry email notifications
+    """
+    return service.get_alert_settings(db, clinica_id)
