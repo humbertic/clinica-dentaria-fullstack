@@ -64,7 +64,7 @@ def get_fatura_pdf(
     """
     try:
         pdf_bytes = pdf_service.generate_fatura_pdf(fatura_id, db)
-        
+
         # Set appropriate headers based on download parameter
         headers = {}
         if download:
@@ -73,7 +73,7 @@ def get_fatura_pdf(
         else:
             # For viewing: use inline disposition
             headers["Content-Disposition"] = f"inline; filename=fatura_{fatura_id}.pdf"
-        
+
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
@@ -83,4 +83,38 @@ def get_fatura_pdf(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error generating invoice PDF: {str(e)}"
+        )
+
+@router.get("/plano/{plano_id}")
+def get_plano_pdf(
+    plano_id: int,
+    download: Optional[bool] = Query(False, description="Set to true to download instead of view"),
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Generate and return a PDF for a treatment plan.
+    Set download=true to download as file, or false (default) to view in browser.
+    """
+    try:
+        pdf_bytes = pdf_service.generate_plano_pdf(plano_id, db)
+
+        # Set appropriate headers based on download parameter
+        headers = {}
+        if download:
+            # For download: use attachment disposition
+            headers["Content-Disposition"] = f"attachment; filename=plano_{plano_id}.pdf"
+        else:
+            # For viewing: use inline disposition
+            headers["Content-Disposition"] = f"inline; filename=plano_{plano_id}.pdf"
+
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers=headers
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating treatment plan PDF: {str(e)}"
         )

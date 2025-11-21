@@ -31,6 +31,7 @@ const route = useRoute();
 const router = useRouter();
 const { toast } = useToast();
 const { orcamento: pdfOrcamento } = usePdf();
+const { enviarOrcamento } = useEmail();
 const source = computed(() => route.query.source as string);
 const patientId = computed(() =>
   route.query.patient_id ? Number(route.query.patient_id) : null
@@ -139,7 +140,15 @@ async function downloadPdf() {
 
 async function sendEmail() {
   if (!orcamento.value) return;
-  await pdfOrcamento.email(orcamento.value.id);
+  if (!selectedClinic.value) {
+    toast({
+      title: "Erro",
+      description: "Nenhuma clínica selecionada",
+      variant: "destructive",
+    });
+    return;
+  }
+  await enviarOrcamento(orcamento.value.id, selectedClinic.value.id);
 }
 
 // Carregar orçamento
