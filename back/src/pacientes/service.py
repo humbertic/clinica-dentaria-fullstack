@@ -488,6 +488,24 @@ def atualizar_plano(
 
 
 
+def get_plano_tratamento(db: Session, plano_id: int) -> Optional[models.PlanoTratamento]:
+    """
+    Obtém um plano de tratamento pelo seu ID.
+    Retorna None se não encontrado.
+    """
+    return (
+        db.query(models.PlanoTratamento)
+          .options(
+              selectinload(models.PlanoTratamento.itens)
+                .selectinload(models.PlanoItem.artigo),
+              selectinload(models.PlanoTratamento.paciente),
+              selectinload(models.PlanoTratamento.medico)
+          )
+          .filter(models.PlanoTratamento.id == plano_id)
+          .first()
+    )
+
+
 def obter_plano_ativo(db: Session, paciente_id: int) -> Optional[models.PlanoTratamento]:
     """
     Obtém o plano de tratamento ativo (em_curso) para um determinado paciente.
