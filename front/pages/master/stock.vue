@@ -71,31 +71,35 @@ onMounted(loadItems);
   <div class="flex flex-col gap-8 p-6">
     <!-- Header -->
     <div
-      class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4"
+      class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4"
     >
       <h1 class="text-2xl font-semibold">Gestão de Stock</h1>
-      <div class="flex gap-2">
+      <div class="flex flex-wrap gap-2 w-full sm:w-auto">
         <Button
           variant="outline"
           @click="handleEnviarAlertas"
           :disabled="sendingAlerts"
+          class="flex-1 sm:flex-none"
         >
           <Bell class="mr-2 h-4 w-4" />
-          {{ sendingAlerts ? 'Enviando...' : 'Enviar Alertas' }}
+          <span class="hidden xs:inline">{{ sendingAlerts ? 'Enviando...' : 'Enviar Alertas' }}</span>
+          <span class="xs:hidden">{{ sendingAlerts ? '...' : 'Alertas' }}</span>
         </Button>
-        <Button variant="default" @click="openItemDialog(true)">
+        <Button variant="default" @click="openItemDialog(true)" class="flex-1 sm:flex-none">
           <Plus class="mr-2 h-4 w-4" />
-          Novo Item
+          <span class="hidden xs:inline">Novo Item</span>
+          <span class="xs:hidden">Novo</span>
         </Button>
-        <Button variant="secondary" @click="openMovementDialog(false)">
+        <Button variant="secondary" @click="openMovementDialog(false)" class="flex-1 sm:flex-none">
           <FileInput class="mr-2 h-4 w-4" />
-          Movimento Manual
+          <span class="hidden xs:inline">Movimento Manual</span>
+          <span class="xs:hidden">Movimento</span>
         </Button>
       </div>
     </div>
 
     <!-- Main Grid -->
-    <div class="grid gap-8 lg:grid-cols-3">
+    <div class="grid gap-6 md:gap-8 grid-cols-1 lg:grid-cols-3">
       <!-- Stock List -->
       <Card class="lg:col-span-2 shadow-md">
         <CardHeader>
@@ -111,9 +115,9 @@ onMounted(loadItems);
               />
               <Input placeholder="Pesquisar item…" class="w-full pl-9" />
             </div>
-            <div class="flex gap-2 w-full sm:w-auto">
+            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <Select defaultValue="todos">
-                <SelectTrigger class="w-[180px]">
+                <SelectTrigger class="w-full sm:w-[180px]">
                   <SelectValue placeholder="Filtrar por" />
                 </SelectTrigger>
                 <SelectContent>
@@ -122,7 +126,7 @@ onMounted(loadItems);
                   <SelectItem value="vencido">Próximo do vencimento</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline">
+              <Button variant="outline" class="w-full sm:w-auto">
                 <Search class="mr-2 h-4 w-4" />
                 Pesquisar
               </Button>
@@ -144,7 +148,7 @@ onMounted(loadItems);
           />
 
           <!-- Pagination -->
-          <div class="flex items-center justify-between">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div class="text-sm text-muted-foreground">
               Mostrando 1-{{ Math.min(items.length, 10) }} de {{ items.length }} itens
             </div>
@@ -153,7 +157,7 @@ onMounted(loadItems);
                 <ChevronLeft class="h-4 w-4" />
                 <span class="sr-only">Página anterior</span>
               </Button>
-              <div class="text-sm">Página 1 de {{ Math.ceil(items.length / 10) || 1 }}</div>
+              <div class="text-sm whitespace-nowrap">Página 1 de {{ Math.ceil(items.length / 10) || 1 }}</div>
               <Button variant="outline" size="sm">
                 <ChevronRight class="h-4 w-4" />
                 <span class="sr-only">Próxima página</span>

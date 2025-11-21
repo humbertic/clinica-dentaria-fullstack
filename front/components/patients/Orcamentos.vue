@@ -261,9 +261,9 @@ onMounted(async () => {
 
     <div v-else class="rounded-2xl shadow bg-card text-card-foreground p-6">
       <!-- Header with title and action button -->
-      <div class="flex items-center justify-between mb-6">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
         <h3 class="text-lg font-semibold">Orçamentos</h3>
-        <Button @click="abrirDialogoNovoOrcamento" :disabled="creatingOrcamento">
+        <Button @click="abrirDialogoNovoOrcamento" :disabled="creatingOrcamento" class="w-full sm:w-auto">
           <PlusCircle class="mr-2 h-4 w-4" />
           Novo Orçamento
         </Button>

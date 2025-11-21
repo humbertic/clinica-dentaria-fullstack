@@ -156,3 +156,27 @@ def listar_emails(
     if not is_master_admin(utilizador_atual):
         raise HTTPException(status_code=403, detail="Apenas o Master Admin pode listar e-mails SMTP.")
     return service.listar_emails(db, clinica_id)
+
+
+# -------- ALERT SETTINGS --------
+@router.get("/{clinica_id}/alertas", response_model=schemas.AlertSettingsResponse)
+def get_alert_settings(
+    clinica_id: int,
+    db: Session = Depends(get_db),
+    utilizador_atual: utilizador_models.Utilizador = Depends(get_current_user)
+):
+    """Get alert settings for a clinic."""
+    return service.get_alert_settings(db, clinica_id)
+
+
+@router.put("/{clinica_id}/alertas", response_model=schemas.AlertSettingsResponse)
+def update_alert_settings(
+    clinica_id: int,
+    settings: schemas.AlertSettingsUpdate,
+    db: Session = Depends(get_db),
+    utilizador_atual: utilizador_models.Utilizador = Depends(get_current_user)
+):
+    """Update alert settings for a clinic."""
+    if not is_master_admin(utilizador_atual):
+        raise HTTPException(status_code=403, detail="Apenas o Master Admin pode atualizar configurações de alertas.")
+    return service.update_alert_settings(db, clinica_id, settings.dict(exclude_unset=True), utilizador_atual.id)

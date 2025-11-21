@@ -18,7 +18,7 @@
 
     <template v-else-if="summary">
       <!-- Summary Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <StatCard
           title="Total de Ações"
           :value="summary.total_acoes"
@@ -96,8 +96,8 @@
 
       <!-- Filters for detail view -->
       <div class="bg-white rounded-lg shadow-md p-4">
-        <div class="flex items-center space-x-4">
-          <div class="flex-1">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Data Início</label>
             <input
               v-model="filters.data_inicio"
@@ -105,7 +105,7 @@
               class="w-full px-3 py-2 border border-gray-300 rounded-lg"
             />
           </div>
-          <div class="flex-1">
+          <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Data Fim</label>
             <input
               v-model="filters.data_fim"
@@ -113,7 +113,7 @@
               class="w-full px-3 py-2 border border-gray-300 rounded-lg"
             />
           </div>
-          <div class="flex-1">
+          <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Módulo</label>
             <select
               v-model="filters.modulo"
@@ -128,7 +128,7 @@
           <div class="flex items-end">
             <button
               @click="loadDetails"
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Filtrar
             </button>

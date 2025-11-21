@@ -154,6 +154,101 @@ def get_clinica_details(db: Session):
     """
     Get basic clinic information from the database.
     """
-    
+
     clinica = db.query(models.Clinica).first()
     return clinica
+
+
+# --------- ALERT CONFIGURATIONS ---------
+DEFAULT_ALERT_SETTINGS = {
+    "stock_alerts_enabled": "true",
+    "stock_alert_days_expiry": "30",
+    "stock_alert_email_enabled": "true",
+}
+
+
+def get_configuracao_valor(db: Session, clinica_id: int, chave: str, default: str = None) -> str:
+    """
+    Get a configuration value for a clinic by key.
+    Returns the default if the configuration doesn't exist.
+    """
+    config = db.query(models.ClinicaConfiguracao).filter_by(
+        clinica_id=clinica_id, chave=chave
+    ).first()
+
+    if config:
+        return config.valor
+
+    # Try global config if clinic-specific not found
+    global_config = db.query(models.ClinicaConfiguracao).filter_by(
+        clinica_id=None, chave=chave
+    ).first()
+
+    if global_config:
+        return global_config.valor
+
+    # Return default from DEFAULT_ALERT_SETTINGS or provided default
+    return DEFAULT_ALERT_SETTINGS.get(chave, default)
+
+
+def set_configuracao_valor(db: Session, clinica_id: int, chave: str, valor: str, user_id: int):
+    """
+    Set or update a configuration value for a clinic.
+    """
+    config = db.query(models.ClinicaConfiguracao).filter_by(
+        clinica_id=clinica_id, chave=chave
+    ).first()
+
+    if config:
+        config.valor = valor
+        db.commit()
+        db.refresh(config)
+        registrar_auditoria(
+            db, user_id, "Atualização", "ClinicaConfiguracao", config.id,
+            f"Configuração '{chave}' atualizada para '{valor}'."
+        )
+    else:
+        config = models.ClinicaConfiguracao(
+            clinica_id=clinica_id,
+            chave=chave,
+            valor=valor
+        )
+        db.add(config)
+        db.commit()
+        db.refresh(config)
+        registrar_auditoria(
+            db, user_id, "Criação", "ClinicaConfiguracao", config.id,
+            f"Configuração '{chave}' criada com valor '{valor}'."
+        )
+
+    return config
+
+
+def get_alert_settings(db: Session, clinica_id: int) -> dict:
+    """
+    Get all alert settings for a clinic.
+    """
+    return {
+        "stock_alerts_enabled": get_configuracao_valor(db, clinica_id, "stock_alerts_enabled", "true") == "true",
+        "stock_alert_days_expiry": int(get_configuracao_valor(db, clinica_id, "stock_alert_days_expiry", "30")),
+        "stock_alert_email_enabled": get_configuracao_valor(db, clinica_id, "stock_alert_email_enabled", "true") == "true",
+    }
+
+
+def update_alert_settings(db: Session, clinica_id: int, settings: dict, user_id: int) -> dict:
+    """
+    Update alert settings for a clinic.
+    """
+    if "stock_alerts_enabled" in settings:
+        set_configuracao_valor(db, clinica_id, "stock_alerts_enabled",
+                              "true" if settings["stock_alerts_enabled"] else "false", user_id)
+
+    if "stock_alert_days_expiry" in settings:
+        set_configuracao_valor(db, clinica_id, "stock_alert_days_expiry",
+                              str(settings["stock_alert_days_expiry"]), user_id)
+
+    if "stock_alert_email_enabled" in settings:
+        set_configuracao_valor(db, clinica_id, "stock_alert_email_enabled",
+                              "true" if settings["stock_alert_email_enabled"] else "false", user_id)
+
+    return get_alert_settings(db, clinica_id)

@@ -299,16 +299,16 @@ onMounted(() => {
       @editPrice="openEditPriceModal"
     />
 
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       <div class="text-sm text-muted-foreground">
         Mostrando
         {{ (currentPage - 1) * pageSize + 1 }}‑
         {{ Math.min(currentPage * pageSize, filteredArtigos.length) }}
         de {{ filteredArtigos.length }} artigos
       </div>
-      <div class="flex items-center space-x-6">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
         <div class="flex items-center space-x-2">
-          <p class="text-sm font-medium">Registos por página</p>
+          <p class="text-sm font-medium whitespace-nowrap">Registos por página</p>
           <Select v-model="pageSize" :options="[10, 20, 50]">
             <template #trigger>
               <Button variant="outline" class="h-8 w-[70px]">
@@ -328,7 +328,7 @@ onMounted(() => {
           >
             <ChevronLeft class="h-4 w-4" />
           </Button>
-          <div class="text-sm font-medium">
+          <div class="text-sm font-medium whitespace-nowrap">
             Página {{ currentPage }} de {{ totalPages }}
           </div>
           <Button

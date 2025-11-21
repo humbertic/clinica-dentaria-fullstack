@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from src.database import SessionLocal
 from src.clinica.models import Clinica
+from src.clinica.service import get_alert_settings
 from src.stock.service import verificar_alertas_stock
 from src.email.service import EmailManager
 from src.email.util import get_email_config
@@ -40,8 +41,24 @@ async def enviar_alertas_todas_clinicas():
 
         for clinica in clinicas:
             try:
+                # Get alert settings for this clinic
+                alert_settings = get_alert_settings(db, clinica.id)
+
+                # Skip if alerts are disabled for this clinic
+                if not alert_settings["stock_alerts_enabled"]:
+                    logger.info(f"  ℹ️  Clínica '{clinica.nome}' (ID: {clinica.id}): Alertas desativados")
+                    continue
+
+                # Skip if email alerts are disabled
+                if not alert_settings["stock_alert_email_enabled"]:
+                    logger.info(f"  ℹ️  Clínica '{clinica.nome}' (ID: {clinica.id}): Email de alertas desativado")
+                    continue
+
+                # Use configured days for expiry check
+                dias_expiracao = alert_settings["stock_alert_days_expiry"]
+
                 # Verificar alertas para esta clínica
-                alertas = verificar_alertas_stock(db, clinica.id, dias_expiracao=30)
+                alertas = verificar_alertas_stock(db, clinica.id, dias_expiracao=dias_expiracao)
 
                 itens_baixo_stock = alertas["itens_baixo_stock"]
                 itens_expirando = alertas["itens_expirando"]

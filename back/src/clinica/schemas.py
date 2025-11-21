@@ -68,3 +68,16 @@ class ClinicaEmailResponse(ClinicaEmailBase):
 
     class Config:
         from_attributes = True
+
+
+# -------- ALERT SETTINGS --------
+class AlertSettingsUpdate(BaseModel):
+    stock_alerts_enabled: Optional[bool] = None
+    stock_alert_days_expiry: Optional[int] = None
+    stock_alert_email_enabled: Optional[bool] = None
+
+
+class AlertSettingsResponse(BaseModel):
+    stock_alerts_enabled: bool
+    stock_alert_days_expiry: int
+    stock_alert_email_enabled: bool
