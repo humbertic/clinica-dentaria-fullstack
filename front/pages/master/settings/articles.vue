@@ -2,8 +2,8 @@
 import { Search, Plus } from "lucide-vue-next";
 import { ref, onMounted } from "vue";
 import { useToast } from "@/components/ui/toast";
-import ArticlesTable from "@/components/articles/Table.vue";
-import ArticlesForm from "@/components/articles/Form.vue";
+// import TablePagination  from "~/components/TablePagination.vue";
+
 
 type Artigo = {
   id: number;
@@ -19,6 +19,7 @@ const showCreateDialog = ref(false);
 const showEditDialog = ref(false);
 const editingArtigo = ref<Artigo | null>(null);
 const searchQuery = ref("");
+const artigos = ref<Artigo[]>([]);
 
 const filteredArtigos = computed(() => {
   if (!searchQuery.value) return artigos.value;
@@ -41,8 +42,6 @@ const {
 const { toast } = useToast();
 const config = useRuntimeConfig();
 const baseUrl = config.public.apiBase;
-
-const artigos = ref<Artigo[]>([]);
 
 async function fetchArtigos() {
   const token = useCookie("token").value;
@@ -152,7 +151,7 @@ onMounted(fetchArtigos);
         <CardContent>
           <ArticlesTable :artigos="paginatedArtigos" @edit="openEditDialog" @delete="handleDelete"/>
           <!-- Pagination -->
-          <UiTablePagination
+          <TablePagination
             v-model:current-page="currentPage"
             v-model:page-size="pageSize"
             :total-items="totalItems"

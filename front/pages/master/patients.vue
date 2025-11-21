@@ -168,7 +168,7 @@ watch(
           />
 
           <!-- Pagination -->
-          <UiTablePagination
+          <TablePagination
             v-model:current-page="currentPage"
             v-model:page-size="pageSize"
             :total-items="totalItems"

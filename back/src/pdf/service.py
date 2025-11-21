@@ -389,7 +389,7 @@ def generate_plano_pdf(plano_id: int, db) -> bytes:
         itens_contexto.append({
             "artigo": {
                 "codigo": item.artigo.codigo if item.artigo else "—",
-                "nome": item.artigo.nome if item.artigo else "—",
+                "nome": item.artigo.descricao if item.artigo else "—",
             },
             "numero_dente": item.numero_dente if item.numero_dente else "—",
             "quantidade_planejada": quantidade,
@@ -404,8 +404,8 @@ def generate_plano_pdf(plano_id: int, db) -> bytes:
         "clinica": clinica,
         "plano": {
             "id": plano.id,
-            "data_inicio": plano.data_inicio.strftime("%d/%m/%Y") if plano.data_inicio else "—",
-            "data_fim": plano.data_fim.strftime("%d/%m/%Y") if plano.data_fim else "—",
+            "data_inicio": plano.data_criacao.strftime("%d/%m/%Y") if plano.data_criacao else "—",
+            "data_fim": plano.data_conclusao.strftime("%d/%m/%Y") if plano.data_conclusao else "—",
             "estado": getattr(plano.estado, "value", plano.estado) if hasattr(plano, 'estado') else "ativo",
             "descricao": getattr(plano, "descricao", ""),
             "observacoes": getattr(plano, "observacoes", ""),
