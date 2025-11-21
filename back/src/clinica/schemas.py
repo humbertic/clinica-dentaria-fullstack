@@ -71,13 +71,10 @@ class ClinicaEmailResponse(ClinicaEmailBase):
 
 
 # -------- ALERT SETTINGS --------
-class AlertSettingsUpdate(BaseModel):
-    stock_alerts_enabled: Optional[bool] = None
-    stock_alert_days_expiry: Optional[int] = None
-    stock_alert_email_enabled: Optional[bool] = None
-
-
 class AlertSettingsResponse(BaseModel):
-    stock_alerts_enabled: bool
-    stock_alert_days_expiry: int
-    stock_alert_email_enabled: bool
+    """
+    Response model for alert settings using existing configuration keys.
+    """
+    alerta_data_vencimento: int  # Days before expiry to alert
+    notificar_email_baixo_estoque: bool  # Enable low stock email notifications
+    notificar_email_vencimento: bool  # Enable expiry email notifications

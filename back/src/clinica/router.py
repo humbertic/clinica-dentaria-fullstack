@@ -165,18 +165,11 @@ def get_alert_settings(
     db: Session = Depends(get_db),
     utilizador_atual: utilizador_models.Utilizador = Depends(get_current_user)
 ):
-    """Get alert settings for a clinic."""
+    """
+    Get alert settings for a clinic.
+    Uses existing configuration keys:
+    - alerta_data_vencimento: days before expiry to alert
+    - notificar_email_baixo_estoque: enable low stock email notifications
+    - notificar_email_vencimento: enable expiry email notifications
+    """
     return service.get_alert_settings(db, clinica_id)
-
-
-@router.put("/{clinica_id}/alertas", response_model=schemas.AlertSettingsResponse)
-def update_alert_settings(
-    clinica_id: int,
-    settings: schemas.AlertSettingsUpdate,
-    db: Session = Depends(get_db),
-    utilizador_atual: utilizador_models.Utilizador = Depends(get_current_user)
-):
-    """Update alert settings for a clinic."""
-    if not is_master_admin(utilizador_atual):
-        raise HTTPException(status_code=403, detail="Apenas o Master Admin pode atualizar configurações de alertas.")
-    return service.update_alert_settings(db, clinica_id, settings.dict(exclude_unset=True), utilizador_atual.id)

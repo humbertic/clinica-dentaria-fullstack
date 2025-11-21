@@ -41,29 +41,28 @@ async def enviar_alertas_todas_clinicas():
 
         for clinica in clinicas:
             try:
-                # Get alert settings for this clinic
+                # Get alert settings for this clinic using existing configuration keys
                 alert_settings = get_alert_settings(db, clinica.id)
 
-                # Skip if alerts are disabled for this clinic
-                if not alert_settings["stock_alerts_enabled"]:
-                    logger.info(f"  ℹ️  Clínica '{clinica.nome}' (ID: {clinica.id}): Alertas desativados")
+                # Check individual notification settings
+                notificar_baixo_estoque = alert_settings["notificar_email_baixo_estoque"]
+                notificar_vencimento = alert_settings["notificar_email_vencimento"]
+
+                # Skip if both notifications are disabled
+                if not notificar_baixo_estoque and not notificar_vencimento:
+                    logger.info(f"  ℹ️  Clínica '{clinica.nome}' (ID: {clinica.id}): Notificações desativadas")
                     continue
 
-                # Skip if email alerts are disabled
-                if not alert_settings["stock_alert_email_enabled"]:
-                    logger.info(f"  ℹ️  Clínica '{clinica.nome}' (ID: {clinica.id}): Email de alertas desativado")
-                    continue
+                # Use configured days for expiry check (alerta_data_vencimento)
+                dias_expiracao = alert_settings["alerta_data_vencimento"]
 
-                # Use configured days for expiry check
-                dias_expiracao = alert_settings["stock_alert_days_expiry"]
-
-                # Verificar alertas para esta clínica
+                # Verificar alertas para esta clínica (uses quantidade_minima from ItemStock)
                 alertas = verificar_alertas_stock(db, clinica.id, dias_expiracao=dias_expiracao)
 
-                itens_baixo_stock = alertas["itens_baixo_stock"]
-                itens_expirando = alertas["itens_expirando"]
+                itens_baixo_stock = alertas["itens_baixo_stock"] if notificar_baixo_estoque else []
+                itens_expirando = alertas["itens_expirando"] if notificar_vencimento else []
 
-                # Se não há alertas, pular
+                # Se não há alertas para enviar, pular
                 if not itens_baixo_stock and not itens_expirando:
                     logger.info(f"  ℹ️  Clínica '{clinica.nome}' (ID: {clinica.id}): Sem alertas")
                     continue
