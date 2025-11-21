@@ -25,6 +25,7 @@ from src.relatorios.router import router as relatorios_router
 from src.contabilidade.router import router as contabilidade_router
 from src.auditoria.context import set_current_clinica_id, clear_current_clinica_id
 from src.utilizadores.jwt import verify_token
+from src.scheduler import start_scheduler, stop_scheduler
 
 
 
@@ -162,6 +163,35 @@ app.include_router(email_router)
 app.include_router(mensagens_router)
 app.include_router(relatorios_router)
 app.include_router(contabilidade_router)
+
+
+# ========== Lifecycle Events ==========
+@app.on_event("startup")
+async def startup_event():
+    """
+    Executado quando a aplicação inicia.
+    Inicia o scheduler de tarefas automáticas.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info("🚀 Iniciando aplicação FastAPI")
+
+    # Iniciar scheduler de alertas de stock
+    start_scheduler()
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """
+    Executado quando a aplicação é encerrada.
+    Para o scheduler de tarefas automáticas.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info("🛑 Encerrando aplicação FastAPI")
+
+    # Parar scheduler de alertas de stock
+    stop_scheduler()
 
 
 
