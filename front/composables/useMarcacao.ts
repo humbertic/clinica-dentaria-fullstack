@@ -105,12 +105,73 @@ export function useMarcacoes() {
     }
   }
 
+  // -------- LEMBRETES E CANCELAMENTOS --------
+  async function enviarLembrete(marcacaoId: number) {
+    loading.value = true;
+    error.value = null;
+    try {
+      const result = await post(`marcacoes/${marcacaoId}/lembrete`, {});
+      return result;
+    } catch (e: any) {
+      error.value = e.message || String(e);
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function enviarCancelamento(marcacaoId: number) {
+    loading.value = true;
+    error.value = null;
+    try {
+      const result = await post(`marcacoes/${marcacaoId}/cancelamento`, {});
+      return result;
+    } catch (e: any) {
+      error.value = e.message || String(e);
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function enviarLembretesEmMassa(marcacaoIds: number[]) {
+    loading.value = true;
+    error.value = null;
+    try {
+      const result = await post(`marcacoes/lembretes/enviar-em-massa`, marcacaoIds);
+      return result;
+    } catch (e: any) {
+      error.value = e.message || String(e);
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function enviarCancelamentosEmMassa(marcacaoIds: number[]) {
+    loading.value = true;
+    error.value = null;
+    try {
+      const result = await post(`marcacoes/cancelamentos/enviar-em-massa`, marcacaoIds);
+      return result;
+    } catch (e: any) {
+      error.value = e.message || String(e);
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   return {
     events,
     fetchMarcacoes,
     createMarcacao,
     updateMarcacao,
     deleteMarcacao,
+    enviarLembrete,
+    enviarCancelamento,
+    enviarLembretesEmMassa,
+    enviarCancelamentosEmMassa,
     loading,
     error,
   };

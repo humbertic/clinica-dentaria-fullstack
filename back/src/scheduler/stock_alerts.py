@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from src.database import SessionLocal
 from src.clinica.models import Clinica
+from src.clinica.service import get_alert_settings
 from src.stock.service import verificar_alertas_stock
 from src.email.service import EmailManager
 from src.email.util import get_email_config
@@ -40,13 +41,28 @@ async def enviar_alertas_todas_clinicas():
 
         for clinica in clinicas:
             try:
-                # Verificar alertas para esta clínica
-                alertas = verificar_alertas_stock(db, clinica.id, dias_expiracao=30)
+                # Get alert settings for this clinic using existing configuration keys
+                alert_settings = get_alert_settings(db, clinica.id)
 
-                itens_baixo_stock = alertas["itens_baixo_stock"]
-                itens_expirando = alertas["itens_expirando"]
+                # Check individual notification settings
+                notificar_baixo_estoque = alert_settings["notificar_email_baixo_estoque"]
+                notificar_vencimento = alert_settings["notificar_email_vencimento"]
 
-                # Se não há alertas, pular
+                # Skip if both notifications are disabled
+                if not notificar_baixo_estoque and not notificar_vencimento:
+                    logger.info(f"  ℹ️  Clínica '{clinica.nome}' (ID: {clinica.id}): Notificações desativadas")
+                    continue
+
+                # Use configured days for expiry check (alerta_data_vencimento)
+                dias_expiracao = alert_settings["alerta_data_vencimento"]
+
+                # Verificar alertas para esta clínica (uses quantidade_minima from ItemStock)
+                alertas = verificar_alertas_stock(db, clinica.id, dias_expiracao=dias_expiracao)
+
+                itens_baixo_stock = alertas["itens_baixo_stock"] if notificar_baixo_estoque else []
+                itens_expirando = alertas["itens_expirando"] if notificar_vencimento else []
+
+                # Se não há alertas para enviar, pular
                 if not itens_baixo_stock and not itens_expirando:
                     logger.info(f"  ℹ️  Clínica '{clinica.nome}' (ID: {clinica.id}): Sem alertas")
                     continue

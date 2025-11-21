@@ -384,13 +384,15 @@ async function onSavePaciente() {
 <template>
   <div class="calendar-page">
     <div class="vuecal__event hidden"></div>
-    <div class="flex items-center justify-between">
-      <MarcacoesSelectorMarcacoes
-        v-model:selectedPaciente="selectedPaciente"
-        v-model:selectedEntity="selectedEntity"
-        v-model:selectedMedico="selectedMedico"
-      />
-      <Button @click="formPacient = true" class="mt-8 mr-2">
+    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-4">
+      <div class="w-full lg:w-auto overflow-x-auto">
+        <MarcacoesSelectorMarcacoes
+          v-model:selectedPaciente="selectedPaciente"
+          v-model:selectedEntity="selectedEntity"
+          v-model:selectedMedico="selectedMedico"
+        />
+      </div>
+      <Button @click="formPacient = true" class="mt-2 lg:mt-8 mr-2 w-full sm:w-auto whitespace-nowrap">
         <Plus class="mr-2 h-4 w-4" /> Novo Paciente
       </Button>
     </div>

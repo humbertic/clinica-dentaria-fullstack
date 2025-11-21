@@ -68,3 +68,13 @@ class ClinicaEmailResponse(ClinicaEmailBase):
 
     class Config:
         from_attributes = True
+
+
+# -------- ALERT SETTINGS --------
+class AlertSettingsResponse(BaseModel):
+    """
+    Response model for alert settings using existing configuration keys.
+    """
+    alerta_data_vencimento: int  # Days before expiry to alert
+    notificar_email_baixo_estoque: bool  # Enable low stock email notifications
+    notificar_email_vencimento: bool  # Enable expiry email notifications
