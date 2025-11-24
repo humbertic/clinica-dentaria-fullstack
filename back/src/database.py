@@ -6,7 +6,7 @@ from src.core.config import settings
 # Use the database_url property from settings which handles both individual params and DATABASE_URL
 DATABASE_URL = settings.database_url
 
-# print(f"🔗 Using database: {DATABASE_URL}")
+print(f"🔗 Using database: {DATABASE_URL}")
 
 # Criação do engine
 engine = create_engine(DATABASE_URL)
