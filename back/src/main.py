@@ -112,7 +112,8 @@ app.add_middleware(AuditoriaContextMiddleware)
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=[
-        "back-production-4fd7.up.railway.app",  # Your backend domain
+        "clinica-dentaria-api.onrender.com",  # Render production
+        "back-production-4fd7.up.railway.app",  # Railway backend domain
         "localhost",  # Local development
         "127.0.0.1",  # Local development
     ]
