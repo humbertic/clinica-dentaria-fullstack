@@ -18,13 +18,15 @@ defineProps<Props>()
     </CardHeader>
 
     <CardContent class="p-0">
-      <LineChart
+           <LineChart
         :title="title"
         :data="data"
         :index="index"
         :categories="categories"
+        :colors="['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)']"
         class="h-64 w-full"
       />
     </CardContent>
   </Card>
 </template>
+

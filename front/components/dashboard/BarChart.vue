@@ -1,3 +1,4 @@
+
 <script setup lang="ts">
 /* -----------------------------------------------------------
    Cartão genérico de gráfico de barras (Shadcn Vue + Chart.js)
@@ -9,7 +10,10 @@ interface Props {
   index: string         // nome da chave do eixo-X
   categories: string[]  // colunas numéricas a mostrar em barras
 }
-defineProps<Props>()
+const props = defineProps<Props>()
+
+// Generate color config for each category using CSS variables
+const colors = props.categories.map((_, i) => `var(--chart-${i + 1})`)
 </script>
 
 <template>
@@ -29,6 +33,7 @@ defineProps<Props>()
         :data="data"
         :index="index"
         :categories="categories"
+        :colors="colors"
         class="h-64 w-full"
       />
     </CardContent>

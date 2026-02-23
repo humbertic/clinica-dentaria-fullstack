@@ -6,7 +6,7 @@ function click() {
 </script>
 
 <template>
-  <Button variant="outline" size="sm" @click="click">
+  <Button variant="outline"  size="sm" @click="click">
     {{ format.toUpperCase() }}
   </Button>
 </template>
