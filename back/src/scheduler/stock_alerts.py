@@ -33,7 +33,7 @@ async def enviar_alertas_todas_clinicas():
     db: Session = SessionLocal()
     try:
         # Buscar todas as clínicas ativas
-        clinicas: List[Clinica] = db.query(Clinica).filter(Clinica.ativo == True).all()
+        clinicas: List[Clinica] = db.query(Clinica).all()
 
         logger.info(f"🔔 Iniciando verificação de alertas de stock para {len(clinicas)} clínica(s)")
 
