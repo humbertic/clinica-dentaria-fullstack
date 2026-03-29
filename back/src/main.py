@@ -116,7 +116,7 @@ app.add_middleware(
         # "back-production-4fd7.up.railway.app",  # Railway backend domain
         "localhost",  # Local development
         "127.0.0.1",  # Local development
-        "161.97.90.4.sslip.io"
+        "clinic.humber-projects.duckdns.org"
     ]
 )
 
@@ -126,8 +126,6 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",  # Local development
         "http://127.0.0.1:3000",  # Local development
-        "https://clinica-prodente.vercel.app"  # Production frontend
-        "https://161.97.90.4.sslip.io"
         "https://clinic.humber-projects.duckdns.org"
     ],
     allow_credentials=True,
