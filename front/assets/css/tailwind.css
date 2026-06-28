@@ -139,12 +139,12 @@
   .vuecal__event { @apply border-l-4; }
 
   /* stripe colours */
-  .entidade-inpsa { @apply border-l-blue-500; }
+  .entidade-inps { @apply border-l-blue-500; }
   .entidade-part  { @apply border-l-green-500; }
   .entidade-ett   { @apply border-l-red-500; }
 
   /* event background colours (dark mode — subtle tints on dark cells) */
-  .vuecal__event.entidade-inpsa {
+  .vuecal__event.entidade-inps {
     background-color: rgba(30, 58, 138, 0.4);  /* blue.900 / 40% */
     color: #dbeafe;                              /* blue.100 */
   }
@@ -228,7 +228,7 @@ html:not(.dark) .vuecal__event {
 }
 
 /* entity event colours in light mode — richer tints */
-html:not(.dark) .vuecal__event.entidade-inpsa {
+html:not(.dark) .vuecal__event.entidade-inps {
   background-color: #dbeafe; /* blue.100 */
   color: #1e3a8a;            /* blue.900 */
 }
