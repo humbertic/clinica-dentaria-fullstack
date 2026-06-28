@@ -398,27 +398,30 @@ const getSaudacao = () => {
   return "Boa noite";
 };
 
-// Dados reativos para atualizações em tempo real
-const horaAtual = ref(
-  new Date().toLocaleTimeString("pt-PT", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-);
+const horaAtual = ref("");
 
-// Atualizar hora a cada minuto
-setInterval(() => {
+let horaInterval: ReturnType<typeof setInterval> | null = null;
+
+onMounted(async () => {
   horaAtual.value = new Date().toLocaleTimeString("pt-PT", {
     hour: "2-digit",
     minute: "2-digit",
   });
-}, 60000);
+  horaInterval = setInterval(() => {
+    horaAtual.value = new Date().toLocaleTimeString("pt-PT", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }, 60000);
 
-onMounted(async () => {
   if (loggedUser.value && selectedClinic.value) {
     await fetchActiveConsultation();
     isLoading.value = false;
   }
+});
+
+onUnmounted(() => {
+  if (horaInterval) clearInterval(horaInterval);
 });
 </script>
 
