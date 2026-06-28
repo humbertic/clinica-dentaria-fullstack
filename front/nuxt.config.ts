@@ -37,8 +37,9 @@ export default defineNuxtConfig({
     },
     server: {
       hmr: {
-        protocol: "ws",
-        host: "localhost",
+        protocol: "wss",
+        host: "clinic.humber-projects.duckdns.org",
+        clientPort: 443,
       },
     },
   },
