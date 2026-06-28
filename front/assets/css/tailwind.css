@@ -143,17 +143,100 @@
   .entidade-part  { @apply border-l-green-500; }
   .entidade-ett   { @apply border-l-red-500; }
 
-  /* now drive Vue Cal’s own bg/text via its CSS vars */
+  /* event background colours (dark mode — subtle tints on dark cells) */
   .vuecal__event.entidade-inpsa {
-    --vuecal-event-color: theme('colors.blue.100');
-    --vuecal-contrast-color: theme('colors.blue.900');
+    background-color: rgba(30, 58, 138, 0.4);  /* blue.900 / 40% */
+    color: #dbeafe;                              /* blue.100 */
   }
   .vuecal__event.entidade-part {
-    --vuecal-event-color: theme('colors.green.100');
-    --vuecal-contrast-color: theme('colors.green.900');
+    background-color: rgba(20, 83, 45, 0.4);   /* green.900 / 40% */
+    color: #dcfce7;                             /* green.100 */
   }
   .vuecal__event.entidade-ett {
-    --vuecal-event-color: theme('colors.red.100');
-    --vuecal-contrast-color: theme('colors.red.900');
+    background-color: rgba(127, 29, 29, 0.4);  /* red.900 / 40% */
+    color: #fee2e2;                             /* red.100 */
   }
+}
+
+/* ── vue-cal: light mode overrides only ──────────────────────────── */
+html:not(.dark) .vuecal {
+  background: hsl(var(--background));
+  box-shadow: 0 0 0 1px inset hsl(var(--border));
+}
+
+html:not(.dark) .vuecal__menu {
+  background-color: hsl(var(--muted));
+}
+
+html:not(.dark) .vuecal__title-bar {
+  background-color: hsl(var(--card));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+html:not(.dark) .vuecal__weekdays-headings {
+  border-color: hsl(var(--border));
+  background-color: hsl(var(--muted));
+}
+
+/* clearer cell grid lines (vertical column borders + horizontal slot borders) */
+html:not(.dark) .vuecal__cell:before {
+  border-color: #94a3b8; /* slate-400 */
+}
+
+/* time grid horizontal lines (day / week view) */
+html:not(.dark) .vuecal .vuecal__time-column .vuecal__time-cell-line:before {
+  border-top: 1px solid #94a3b8; /* slate-400 */
+}
+
+/* time labels */
+html:not(.dark) .vuecal__time-column .vuecal__time-cell {
+  color: hsl(var(--muted-foreground));
+}
+
+/* all-day row divider */
+html:not(.dark) .vuecal__all-day,
+html:not(.dark) .vuecal__all-day-text {
+  border-color: hsl(var(--border));
+}
+
+/* weekday heading bottom border */
+html:not(.dark) .vuecal__weekdays-headings {
+  border-bottom-color: hsl(var(--border));
+}
+
+/* today highlight */
+html:not(.dark) .vuecal__cell--today,
+html:not(.dark) .vuecal__cell--current {
+  background-color: hsl(var(--primary) / 0.06);
+}
+
+/* selected cell */
+html:not(.dark) .vuecal__cell--selected {
+  background-color: hsl(var(--accent));
+}
+
+/* out-of-scope days (previous/next month) */
+html:not(.dark) .vuecal__cell--out-of-scope {
+  background-color: hsl(var(--muted) / 0.6);
+}
+
+/* default event — visible white card with shadow */
+html:not(.dark) .vuecal__event {
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+  box-shadow: 0 1px 3px hsl(var(--border));
+}
+
+/* entity event colours in light mode — richer tints */
+html:not(.dark) .vuecal__event.entidade-inpsa {
+  background-color: #dbeafe; /* blue.100 */
+  color: #1e3a8a;            /* blue.900 */
+}
+html:not(.dark) .vuecal__event.entidade-part {
+  background-color: #dcfce7; /* green.100 */
+  color: #14532d;            /* green.900 */
+}
+html:not(.dark) .vuecal__event.entidade-ett {
+  background-color: #fee2e2; /* red.100 */
+  color: #7f1d1d;            /* red.900 */
 }

@@ -2,142 +2,136 @@
   <div class="user-activity p-6 space-y-6">
     <!-- Header -->
     <div>
-      <NuxtLink to="/contabilidade" class="text-sm text-blue-600 hover:text-blue-700 mb-2 inline-block">
-        ← Voltar ao Dashboard
-      </NuxtLink>
-      <h1 class="text-3xl font-bold text-gray-900">Atividade do Utilizador</h1>
-      <p v-if="summary" class="mt-1 text-lg text-gray-600">
+      <Button variant="link" as-child class="mb-2 h-auto p-0 text-sm">
+        <NuxtLink to="/master/contabilidade">← Voltar ao Dashboard</NuxtLink>
+      </Button>
+      <h1 class="text-3xl font-bold text-foreground">Atividade do Utilizador</h1>
+      <p v-if="summary" class="mt-1 text-lg text-muted-foreground">
         {{ summary.utilizador_nome }}
       </p>
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="text-center py-12">
-      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <Skeleton v-for="i in 4" :key="i" class="h-28 rounded-lg" />
     </div>
 
     <template v-else-if="summary">
       <!-- Summary Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <StatCard
+        <ContabilidadeStatCard
           title="Total de Ações"
           :value="summary.total_acoes"
-          icon-bg-class="bg-blue-100"
-          icon-color="text-blue-600"
+          icon-bg-class="bg-primary/10"
+          icon-color="text-primary"
         />
-        <StatCard
+        <ContabilidadeStatCard
           title="Criações"
           :value="summary.acoes_por_tipo['Criação'] || 0"
-          icon-bg-class="bg-green-100"
-          icon-color="text-green-600"
+          icon-bg-class="bg-green-500/10"
+          icon-color="text-green-600 dark:text-green-400"
         />
-        <StatCard
+        <ContabilidadeStatCard
           title="Atualizações"
           :value="summary.acoes_por_tipo['Atualização'] || 0"
-          icon-bg-class="bg-blue-100"
-          icon-color="text-blue-600"
+          icon-bg-class="bg-primary/10"
+          icon-color="text-primary"
         />
-        <StatCard
+        <ContabilidadeStatCard
           title="Remoções"
           :value="summary.acoes_por_tipo['Remoção'] || 0"
-          icon-bg-class="bg-red-100"
-          icon-color="text-red-600"
+          icon-bg-class="bg-destructive/10"
+          icon-color="text-destructive"
         />
       </div>
 
       <!-- Charts -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Actions by Type -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Ações por Tipo</h3>
-          <div class="space-y-3">
+        <Card>
+          <CardHeader>
+            <CardTitle class="text-lg">Ações por Tipo</CardTitle>
+          </CardHeader>
+          <CardContent class="space-y-3">
             <div
               v-for="(count, tipo) in summary.acoes_por_tipo"
               :key="tipo"
               class="flex items-center justify-between"
             >
-              <span class="text-sm text-gray-700">{{ tipo }}</span>
+              <span class="text-sm text-muted-foreground">{{ tipo }}</span>
               <div class="flex items-center space-x-3">
-                <span class="text-sm font-semibold text-gray-900">{{ count }}</span>
-                <div class="w-32 bg-gray-200 rounded-full h-2">
+                <span class="text-sm font-semibold text-foreground">{{ count }}</span>
+                <div class="w-32 bg-muted rounded-full h-2">
                   <div
-                    class="bg-blue-500 h-2 rounded-full"
+                    class="bg-primary h-2 rounded-full"
                     :style="{ width: `${(count / summary.total_acoes) * 100}%` }"
-                  ></div>
+                  />
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         <!-- Objects Modified -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Objetos Modificados</h3>
-          <div class="space-y-3">
+        <Card>
+          <CardHeader>
+            <CardTitle class="text-lg">Objetos Modificados</CardTitle>
+          </CardHeader>
+          <CardContent class="space-y-3">
             <div
               v-for="(count, objeto) in topObjects"
               :key="objeto"
               class="flex items-center justify-between"
             >
-              <span class="text-sm text-gray-700">{{ objeto }}</span>
+              <span class="text-sm text-muted-foreground">{{ objeto }}</span>
               <div class="flex items-center space-x-3">
-                <span class="text-sm font-semibold text-gray-900">{{ count }}</span>
-                <div class="w-32 bg-gray-200 rounded-full h-2">
+                <span class="text-sm font-semibold text-foreground">{{ count }}</span>
+                <div class="w-32 bg-muted rounded-full h-2">
                   <div
-                    class="bg-green-500 h-2 rounded-full"
+                    class="bg-green-500 dark:bg-green-400 h-2 rounded-full"
                     :style="{ width: `${(count / summary.total_acoes) * 100}%` }"
-                  ></div>
+                  />
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       <!-- Filters for detail view -->
-      <div class="bg-white rounded-lg shadow-md p-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Data Início</label>
-            <input
-              v-model="filters.data_inicio"
-              type="date"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            />
+      <Card>
+        <CardContent class="pt-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="space-y-1">
+              <Label for="data-inicio">Data Início</Label>
+              <Input id="data-inicio" v-model="filters.data_inicio" type="date" />
+            </div>
+            <div class="space-y-1">
+              <Label for="data-fim">Data Fim</Label>
+              <Input id="data-fim" v-model="filters.data_fim" type="date" />
+            </div>
+            <div class="space-y-1">
+              <Label for="modulo">Módulo</Label>
+              <Select v-model="filters.modulo">
+                <SelectTrigger id="modulo">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem v-for="modulo in availableModules" :key="modulo" :value="modulo">
+                    {{ modulo }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div class="flex items-end">
+              <Button class="w-full" @click="loadDetails">Filtrar</Button>
+            </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Data Fim</label>
-            <input
-              v-model="filters.data_fim"
-              type="date"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Módulo</label>
-            <select
-              v-model="filters.modulo"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            >
-              <option value="">Todos</option>
-              <option v-for="modulo in availableModules" :key="modulo" :value="modulo">
-                {{ modulo }}
-              </option>
-            </select>
-          </div>
-          <div class="flex items-end">
-            <button
-              @click="loadDetails"
-              class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Filtrar
-            </button>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <!-- Activity Details -->
-      <ActivityTimeline
+      <ContabilidadeActivityTimeline
         :activities="details"
         title="Histórico Detalhado de Atividades"
         :loading="detailsLoading"
@@ -203,7 +197,7 @@ const loadDetails = async () => {
       data_fim: filters.value.data_fim,
       modulo: filters.value.modulo || undefined,
       limit: 100
-    })
+    }) ?? []
   } catch (error) {
     console.error('Error loading user details:', error)
   } finally {
